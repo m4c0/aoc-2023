@@ -10,7 +10,9 @@ void run(jute::view line) {
   auto [gl, gr] = line.split(':');
   auto id = atoi(gl.split(' ').after);
 
-  bool possible = true;
+  auto max_r{0};
+  auto max_g{0};
+  auto max_b{0};
   auto games = gr.subview(1).after;
   while (games != "") {
     auto [game, rest] = games.split(';');
@@ -19,21 +21,24 @@ void run(jute::view line) {
       auto [gl, gr] = game.split(',');
       auto [num_s, color] = gl.split(' ');
       auto num = atoi(num_s);
-      if (color == "red" && num > 12)
-        possible = false;
-      if (color == "green" && num > 13)
-        possible = false;
-      if (color == "blue" && num > 14)
-        possible = false;
+
+      if (color == "red") {
+        mx(max_r, num);
+      } else if (color == "green") {
+        mx(max_g, num);
+      } else if (color == "blue") {
+        mx(max_b, num);
+      } else {
+        throw 0;
+      }
 
       game = gr.subview(1).after;
     } while (game != "");
 
     games = rest.subview(1).after;
   }
-
-  if (possible)
-    res += id;
+  silog::log(silog::debug, "%d %d %d", max_r, max_g, max_b);
+  res += max_r * max_g * max_b;
 }
 
 int main() {
