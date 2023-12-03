@@ -1,4 +1,5 @@
 #pragma leco tool
+#include <stdio.h>
 import bruh;
 import hai;
 import jute;
@@ -8,6 +9,7 @@ import traits;
 struct num {
   unsigned start{};
   unsigned end{};
+  unsigned row{};
   int value{};
   bool marked{};
 };
@@ -29,16 +31,19 @@ static_assert([] {
   return p[0].marked;
 }());
 
+int crow{1};
+
 int sum{};
 void run(jute::view line) {
   hai::varray<num> curr{10240};
 
   num n{};
+  n.row = crow++;
   for (n.start = 0; n.start < line.size(); n.start++) {
     if (!digit(line[n.start]))
       continue;
 
-    for (n.end = n.start + 1; n.end < line.size(); n.end++) {
+    for (n.end = n.start + 1; n.end <= line.size(); n.end++) {
       if (digit(line[n.end]))
         continue;
 
@@ -47,7 +52,8 @@ void run(jute::view line) {
 
       n.end--; // inclusive range
 
-      silog::log(silog::debug, "%d %d - %d", n.start, n.end, n.value);
+      if (n.row == 11)
+        silog::log(silog::debug, "%d %d - %d", n.start, n.end, n.value);
       curr.push_back(n);
       n.start = n.end + 1;
       break;
@@ -69,8 +75,12 @@ void run(jute::view line) {
   }
 
   for (auto &n : prev_nums) {
-    if (n.marked)
+    if (n.marked) {
       sum += n.value;
+    } else {
+      // printf("data.real.txt:%d:%d:%d %d\n", n.row, n.start + 1, n.end + 1,
+      // n.value);
+    }
   }
   prev_nums = traits::move(curr);
 }
