@@ -14,26 +14,27 @@ struct num {
   bool marked{};
 };
 hai::varray<num> prev_nums{10240};
-hai::varray<unsigned> prev_syms{10240};
 
-constexpr void mark(hai::varray<num> &ns, int pos) {
+struct gear {
+  unsigned pos{};
+  long value{1};
+  int count{};
+};
+hai::varray<gear> prev_gears{10240};
+
+constexpr void mark(hai::varray<num> &ns, gear &g) {
   for (auto &n : ns) {
-    // silog::log(silog::debug, "%d %d", n.value, pos);
-    if (n.end < pos - 1 || pos + 1 < n.start)
+    if (n.end < g.pos - 1 || g.pos + 1 < n.start)
       continue;
-    n.marked = true;
+
+    g.value *= n.value;
+    g.count++;
   }
 }
-static_assert([] {
-  hai::varray<num> p{1};
-  p.push_back(num{2, 4, 592});
-  mark(p, 5);
-  return p[0].marked;
-}());
 
 int crow{1};
 
-int sum{};
+long sum{};
 void run(jute::view line) {
   hai::varray<num> curr{10240};
 
@@ -60,28 +61,23 @@ void run(jute::view line) {
     }
   }
 
-  for (auto pos : prev_syms) {
-    mark(curr, pos);
+  for (auto &g : prev_gears) {
+    mark(curr, g);
+    if (g.count == 2)
+      sum += g.value;
   }
 
-  prev_syms.truncate(0);
-  for (auto i = 0; i < line.size(); i++) {
+  prev_gears.truncate(0);
+  for (auto i = 0U; i < line.size(); i++) {
     if (digit(line[i]) || line[i] == '.')
       continue;
 
-    prev_syms.push_back(i);
-    mark(prev_nums, i);
-    mark(curr, i);
+    gear g{.pos = i};
+    mark(prev_nums, g);
+    mark(curr, g);
+    prev_gears.push_back(g);
   }
 
-  for (auto &n : prev_nums) {
-    if (n.marked) {
-      sum += n.value;
-    } else {
-      // printf("data.real.txt:%d:%d:%d %d\n", n.row, n.start + 1, n.end + 1,
-      // n.value);
-    }
-  }
   prev_nums = traits::move(curr);
 }
 
