@@ -91,3 +91,19 @@ public:
 
   const auto operator*() const noexcept { return ic_buf; }
 };
+
+export constexpr bool digit(char c) {
+  if (c < '0')
+    return false;
+  if (c > '9')
+    return false;
+  return true;
+}
+export constexpr bool starts_with(jute::view str, jute::view seed) {
+  auto [l, r] = str.subview(seed.size());
+  return l == seed;
+}
+static_assert(starts_with("one", "one"));
+static_assert(!starts_with("one", "ones"));
+static_assert(starts_with("onetwo", "one"));
+static_assert(!starts_with("onetwo", "two"));
