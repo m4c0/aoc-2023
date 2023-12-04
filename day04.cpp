@@ -40,23 +40,31 @@ static_assert([] {
   return true;
 }());
 
-int sum{};
+long cards[1000]{};
+long sum{};
 
 void run(jute::view line) {
   auto [l, r] = line.split(':');
   auto [wins, gots] = r.split('|');
 
+  auto id = atoi(l.split(' ').after.trim());
+  auto qty = cards[id] + 1;
+
   int worth = 0;
   for (auto g : atoi_it(gots)) {
     for (auto w : atoi_it(wins)) {
       if (g == w) {
-        worth = worth == 0 ? 1 : (worth * 2);
+        worth++;
         break;
       }
     }
   }
-  info("w", worth);
-  sum += worth;
+  if (worth == 0)
+    info("zeroed", id);
+  for (auto i = 0; i < worth; i++) {
+    cards[id + i + 1] += qty;
+  }
+  sum += qty;
 }
 
 int main() {
