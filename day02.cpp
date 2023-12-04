@@ -8,7 +8,7 @@ int res{};
 
 void run(jute::view line) {
   auto [gl, gr] = line.split(':');
-  auto id = atoi(gl.split(' ').after);
+  [[maybe_unused]] auto id = atoi(gl.split(' ').after);
 
   auto max_r{0};
   auto max_g{0};
