@@ -36,8 +36,8 @@ void run(jute::view line) {
   if (!got_seeds) {
     auto it = atoi_it(line.split(':').after).begin();
     for (; it != atoi_it{}; ++it) {
-      auto s = *it;
-      auto l = *++it;
+      long s = *it;
+      long l = *++it;
       seeds.push_back(seed{s, s + l - 1});
     }
     got_seeds = true;
@@ -53,53 +53,48 @@ void run(jute::view line) {
   auto it = atoi_it(line).begin();
   auto to_s = *it;
   auto from_s = *++it;
+  auto delta_s = to_s - from_s;
   auto len = *++it;
   auto from_e = from_s + len - 1;
   for (auto &s : seeds) {
     if (s.map == cur_map)
       continue;
 
-    silog::log(silog::debug, "%d %d -- %ld %ld === %d", from_s, from_e, s.start,
-               s.end, to_s);
-    if (s.end < from_s)
-      continue;
-    if (from_e < s.start)
-      continue;
-
-    s.map = cur_map;
-    if (from_s <= s.start && s.end <= from_e) {
-      silog::log(silog::debug, "------ %ld %ld", s.start, s.end);
-    } else if (from_s <= s.start) {
-      auto [a, b] = split(s, from_e);
-      silog::log(silog::debug, "------ << %ld %ld -- %ld %ld", a.start, a.end,
-                 b.start, b.end);
-      s = a;
-      seeds.push_back(b);
-    } else if (s.end <= from_e) {
-      auto [a, b] = split(s, from_s - 1);
-      silog::log(silog::debug, "------ >> %ld %ld -- %ld %ld", a.start, a.end,
-                 b.start, b.end);
-      s = b;
-      seeds.push_back(a);
-    } else {
-      auto [a, b] = split(s, from_s - 1);
-      auto [c, d] = split(b, from_e);
-      silog::log(silog::debug, "------ %ld %ld -- %ld %ld -- %ld %ld", a.start,
-                 a.end, c.start, c.end, d.start, d.end);
-      s = c;
-      seeds.push_back(a);
-      seeds.push_back(d);
+    silog::log(silog::debug, "%ld %ld -- %ld %ld === %ld", from_s, from_e,
+               s.start, s.end, to_s);
+    seed l = s;
+    mn(l.end, from_s - 1);
+    if (l.end >= l.start && l != s) {
+      silog::log(silog::debug, "l: %ld %ld", l.start, l.end);
+      seeds.push_back(l);
     }
-    s.start = to_s + s.start - from_s;
-    s.end = to_s + s.end - from_s;
+
+    seed r = s;
+    mx(r.start, from_e + 1);
+    if (r.end >= r.start && r != s) {
+      silog::log(silog::debug, "r: %ld %ld", r.start, r.end);
+      seeds.push_back(r);
+    }
+
+    seed m = s;
+    mx(m.start, from_s);
+    mn(m.end, from_e);
+    if (m.end >= m.start && l != s && r != s) {
+      silog::log(silog::debug, "m: %ld %ld", m.start, m.end);
+      s = m;
+      s.map = cur_map;
+      s.start += delta_s;
+      s.end += delta_s;
+    }
   }
 }
 
 int main() {
-  loop_e(run);
+  loop(run);
 
   long min{};
   for (auto s : seeds) {
+    silog::log(silog::debug, "vvvv %ld %ld", s.start, s.end);
     if (min == 0)
       min = s.start;
     mn(min, s.start);

@@ -25,8 +25,8 @@ export void loop(jute::view fn, auto &&func) {
 export void loop(auto &&func) { loop("../../data.real.txt", func); }
 export void loop_e(auto &&func) { loop("../../data.fake.txt", func); }
 
-export constexpr unsigned atoi(jute::view str) {
-  unsigned n = 0;
+export constexpr long atoi(jute::view str) {
+  long n = 0;
   auto st = str[0] == '-' ? 1 : 0;
   auto [l, r] = str.subview(st);
   for (auto c : r) {
@@ -66,7 +66,7 @@ export constexpr point abs(const point &a) noexcept {
   return {abs(a.x), abs(a.y)};
 }
 
-export constexpr void mx(int &a, int b) noexcept {
+export constexpr void mx(auto &a, auto b) noexcept {
   if (b > a)
     a = b;
 }
