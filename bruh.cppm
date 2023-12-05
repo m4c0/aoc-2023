@@ -70,7 +70,7 @@ export constexpr void mx(int &a, int b) noexcept {
   if (b > a)
     a = b;
 }
-export constexpr void mn(int &a, int b) noexcept {
+export constexpr void mn(auto &a, auto b) noexcept {
   if (b < a)
     a = b;
 }
