@@ -2,6 +2,7 @@ export module bruh;
 import jute;
 import silog;
 import sires;
+import traits;
 
 export auto slurp(jute::view fn) {
   auto file = sires::slurp(fn).take([](auto e) {
@@ -143,3 +144,37 @@ static_assert([] {
 
   return true;
 }());
+
+class row_it {
+  jute::view line{};
+  jute::view rest{};
+
+public:
+  constexpr row_it() = default;
+  constexpr row_it(jute::view buf) {
+    auto [l, r] = buf.split('\n');
+    line = l;
+    rest = r;
+  }
+
+  constexpr bool operator==(const row_it &o) const noexcept {
+    return o.line.data() == line.data();
+  }
+
+  constexpr row_it &operator++() noexcept { return *this = row_it{rest}; }
+  constexpr auto operator*() const noexcept { return line; }
+};
+class data {
+  hai::array<char> m_data;
+
+  constexpr explicit data(auto d) : m_data{traits::move(d)} {}
+
+public:
+  static data real() { return data{slurp("../../data.real.txt")}; }
+  static data fake() { return data{slurp("../../data.fake.txt")}; }
+
+  auto begin() const noexcept {
+    return row_it{{m_data.begin(), m_data.size()}};
+  }
+  auto end() const noexcept { return row_it{}; }
+};
