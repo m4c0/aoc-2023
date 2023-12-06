@@ -4,27 +4,26 @@ import hai;
 import jute;
 import silog;
 
+constexpr long mehtoi(jute::view v) {
+  long res{};
+  for (auto c : v) {
+    if (c >= '0' && c <= '9')
+      res = res * 10 + (c - '0');
+  }
+  return res;
+}
+static_assert(mehtoi("  12   34   56  ") == 123456l);
+
 int main() {
-  auto d = data::fake();
-  auto it = d.begin();
-  auto time_it = atoi_it((*it).split(':').after).begin();
-  auto dist_it = atoi_it((*++it).split(':').after).begin();
+  auto dt = data::real();
+  auto it = dt.begin();
+  auto t = mehtoi((*it).split(':').after);
+  auto d = mehtoi((*++it).split(':').after);
 
-  int num{1};
-  while (time_it != atoi_it{}) {
-    auto t = *time_it;
-    auto d = *dist_it;
-
-    int nr{};
-    for (auto i = 0; i < t; i++) {
-      if (i * (t - i) > d)
-        nr++;
-    }
-    num *= nr;
-    info("nr", nr);
-
-    ++time_it;
-    ++dist_it;
+  int num{0};
+  for (auto i = 0; i < t; i++) {
+    if (i * (t - i) > d)
+      num++;
   }
   info("num", num);
 }
