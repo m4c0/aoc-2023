@@ -158,13 +158,14 @@ public:
   }
 
   constexpr bool operator==(const row_it &o) const noexcept {
-    return o.line.data() == line.data();
+    return o.line.data() == line.data() ||
+           (!line.size() && !o.line.size() && !o.rest.size() && !rest.size());
   }
 
   constexpr row_it &operator++() noexcept { return *this = row_it{rest}; }
   constexpr auto operator*() const noexcept { return line; }
 };
-class data {
+export class data {
   hai::array<char> m_data;
 
   constexpr explicit data(auto d) : m_data{traits::move(d)} {}
