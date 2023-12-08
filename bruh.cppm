@@ -163,6 +163,11 @@ public:
   }
 
   constexpr row_it &operator++() noexcept { return *this = row_it{rest}; }
+  constexpr row_it operator++(int) noexcept {
+    row_it res = *this;
+    *this = row_it{rest};
+    return res;
+  }
   constexpr auto operator*() const noexcept { return line; }
 };
 export class data {
