@@ -44,6 +44,9 @@ static_assert(atoi("-123") == -123);
 export void info(const char *label, int val) {
   silog::log(silog::info, "%s: %d", label, val);
 }
+export void info(const char *label, long val) {
+  silog::log(silog::info, "%s: %ld", label, val);
+}
 export void info(const char *label, jute::view val) {
   silog::log(silog::info, "%s: [%.*s]", label, (int)val.size(), val.data());
 }

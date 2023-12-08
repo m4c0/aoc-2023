@@ -26,19 +26,43 @@ static_assert(code_of("AAZ") == 25);
 constexpr auto zzz = code_of("ZZZ");
 static_assert(zzz == 26 * 26 * 26 - 1);
 
+constexpr bool matches(int code, char c) { return code % 26 == c - 'A'; }
+static_assert(matches(code_of("AAA"), 'A'));
+static_assert(matches(code_of("AAZ"), 'Z'));
+static_assert(!matches(code_of("AAA"), 'Z'));
+static_assert(!matches(code_of("AAZ"), 'A'));
+
 auto next_opc() {
   auto res = opc[opcn];
   opcn = (opcn + 1) % opc.size();
   return res;
 }
 
-int find_zzz(int from) {
-  if (from == zzz)
-    return 0;
+constexpr long gcd(long a, long b) {
+  if (b == 0)
+    return a;
+  return (a > b) ? gcd(b, a % b) : gcd(a, b % a);
+}
+static_assert(gcd(54, 24) == 6);
+static_assert(gcd(48, 18) == 6);
+static_assert(gcd(15, 25) == 5);
+static_assert(gcd(3, 2) == 1);
+static_assert(gcd(3, 0) == 3);
+static_assert(gcd(1, 1) == 1l);
 
-  bool left = next_opc() == 'L';
-  const auto &[l, r] = insts[from];
-  return 1 + find_zzz(left ? l : r);
+auto find_zzz(int from) {
+  struct {
+    long res{};
+    int stop_code{};
+  } res;
+  do {
+    bool left = next_opc() == 'L';
+    const auto &[l, r] = insts[from];
+    from = left ? l : r;
+    res.res++;
+  } while (!matches(from, 'Z'));
+  res.stop_code = from;
+  return res;
 }
 
 int main() {
@@ -47,12 +71,22 @@ int main() {
 
   opc = *it++;
 
+  hai::varray<int> from{10240};
   while (++it != dt.end()) {
     auto [f, ff] = (*it).split('=');
     auto [l, ll] = ff.split('(').after.split(',');
     auto r = ll.split(')').before;
-    insts[code_of(f)] = {code_of(l), code_of(r)};
+    auto cf = code_of(f);
+    insts[cf] = {code_of(l), code_of(r)};
+    if (matches(cf, 'A'))
+      from.push_back(cf);
   }
 
-  info("res", find_zzz(code_of("AAA")));
+  long res{1};
+  for (auto f : from) {
+    long ff = find_zzz(f).res;
+    info("gcd", ff / gcd(res, ff));
+    res *= ff / gcd(res, ff);
+    info("res", res);
+  }
 }
