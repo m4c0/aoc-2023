@@ -103,6 +103,8 @@ export constexpr bool digit(char c) {
     return false;
   return true;
 }
+export constexpr bool neg_digit(char c) { return digit(c) || (c == '-'); }
+
 export constexpr bool starts_with(jute::view str, jute::view seed) {
   auto [l, r] = str.subview(seed.size());
   return l == seed;
@@ -127,7 +129,7 @@ public:
   }
 
   constexpr auto &operator++() noexcept {
-    while (m_data != "" && digit(m_data[0])) {
+    while (m_data != "" && neg_digit(m_data[0])) {
       m_data = m_data.subview(1).after;
     }
     m_data = m_data.trim();
@@ -139,10 +141,10 @@ public:
 static_assert([] {
   const auto fail = [] -> int { throw 1; };
 
-  auto it = atoi_it{" 1 2 3 "}.begin();
+  auto it = atoi_it{" 1 2 -3 "}.begin();
   (*it) == 1 || fail();
   (*++it) == 2 || fail();
-  (*++it) == 3 || fail();
+  (*++it) == -3 || fail();
   (++it != atoi_it{}) && fail();
 
   return true;
