@@ -4,35 +4,34 @@ import hai;
 import jute;
 import silog;
 
-int run(const hai::varray<int> &row) {
-  hai::varray<int> next{row.size()};
-  int n = row[0];
-  int sum{};
+long run(const hai::varray<long> &row) {
+  hai::varray<long> next{row.size()};
+  long n = row[0];
+  bool all_zeroes{true};
   for (auto i = 1; i < row.size(); i++) {
-    auto nn = row[i];
-    auto d = nn - n;
+    long nn = row[i];
+    long d = nn - n;
     next.push_back(d);
     n = nn;
-    sum += d;
+    if (d != 0)
+      all_zeroes = false;
   }
+  if (row.size() < 3)
+    throw 0;
+
   auto last = row[row.size() - 1];
-  if (sum == 0) {
-    return last;
-  } else {
-    return last + run(next);
-  }
+  return all_zeroes ? last : last + run(next);
 }
 
 int main() {
-  auto dt = data::fake();
-  auto res{0};
+  auto dt = data::real();
+  long res{0};
   for (auto line : dt) {
-    hai::varray<int> row{1024};
-    for (auto num : atoi_it(line)) {
+    hai::varray<long> row{1024};
+    for (long num : atoi_it(line)) {
       row.push_back(num);
     }
-    auto r = run(row);
-    info("row", r);
+    long r = run(row);
     res += r;
   }
   info("res", res);
