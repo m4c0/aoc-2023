@@ -19,8 +19,8 @@ long run(const hai::varray<long> &row) {
   if (row.size() < 3)
     throw 0;
 
-  auto last = row[row.size() - 1];
-  return all_zeroes ? last : last + run(next);
+  auto last = row[0];
+  return all_zeroes ? last : last - run(next);
 }
 
 int main() {
