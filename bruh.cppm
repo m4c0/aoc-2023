@@ -183,6 +183,7 @@ export class data {
 public:
   static data real() { return data{slurp("../../data.real.txt")}; }
   static data fake() { return data{slurp("../../data.fake.txt")}; }
+  static data of(int argc) { return argc == 1 ? fake() : real(); }
 
   auto begin() const noexcept {
     return row_it{{m_data.begin(), m_data.size()}};
