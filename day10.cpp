@@ -27,17 +27,19 @@ constexpr void next(point &p, cardinal &card) {
   p = p + step(card);
 }
 
-int run(point s, cardinal c, jute::view valids) {
+bool run(point s, cardinal c) {
+  constexpr const jute::view valids[4]{"7F|", "JL|", "LF-", "7J-"};
   auto p = s + step(c);
-  if (valids.index_of(at(p)) < 0)
-    return 0;
+  if (valids[c].index_of(at(p)) < 0)
+    return false;
 
   int n{1};
   while (s != p) {
     next(p, c);
     n++;
   }
-  return n;
+  info("n", n / 2);
+  return true;
 }
 
 int main(int argc, char **argv) {
@@ -56,12 +58,5 @@ int main(int argc, char **argv) {
     lines.push_back(l);
   }
 
-  int n{};
-
-  mx(n, run(s, W, "LF-"));
-  mx(n, run(s, E, "7J-"));
-  mx(n, run(s, N, "7F|"));
-  mx(n, run(s, S, "JL|"));
-
-  info("n", n / 2);
+  run(s, W) || run(s, E) || run(s, N) || run(s, S);
 }
