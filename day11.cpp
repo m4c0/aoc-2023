@@ -40,7 +40,14 @@ int main(int argc, char **argv) {
     }
   }
 
-  for (auto g : gals) {
-    silog::log(silog::debug, "%d %d", g.x, g.y);
+  int res{};
+  for (auto i = 0; i < gals.size(); i++) {
+    const auto &gi = gals[i];
+    for (auto j = i + 1; j < gals.size(); j++) {
+      const auto &gj = gals[j];
+      auto d = abs(gi - gj);
+      res += d.x + d.y;
+    }
   }
+  info("res", res);
 }
