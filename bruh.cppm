@@ -54,8 +54,8 @@ export void info(const char *label, jute::view val) {
 export constexpr int abs(int a) noexcept { return a >= 0 ? a : -a; }
 
 export struct point {
-  int x{};
-  int y{};
+  long x{};
+  long y{};
 };
 export constexpr point operator+(const point &a, const point &b) noexcept {
   return {a.x + b.x, a.y + b.y};

@@ -21,13 +21,14 @@ int main(int argc, char **argv) {
     p.y++;
   }
 
+  const long incr = 1000000 - 1;
   for (int y = p.y - 1; y > 0; y--) {
     if (rs[y] > 0)
       continue;
 
     for (auto &g : gals) {
       if (g.y >= y)
-        g.y++;
+        g.y += incr;
     }
   }
   for (int x = p.x - 1; x > 0; x--) {
@@ -35,12 +36,13 @@ int main(int argc, char **argv) {
       continue;
 
     for (auto &g : gals) {
-      if (g.x >= x)
-        g.x++;
+      if (g.x >= x) {
+        g.x += incr;
+      }
     }
   }
 
-  int res{};
+  long res{};
   for (auto i = 0; i < gals.size(); i++) {
     const auto &gi = gals[i];
     for (auto j = i + 1; j < gals.size(); j++) {
