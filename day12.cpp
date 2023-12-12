@@ -4,61 +4,41 @@ import hai;
 import jute;
 import silog;
 
-constexpr bool matches(jute::view buf, atoi_sit chk) {
-  while (buf != "" && buf[0] == '.')
-    buf = buf.subview(1).after;
+int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
+  while (pat_s != pat_e && *pat_s == '.')
+    pat_s++;
 
-  if (buf == "")
-    return chk == atoi_sit{};
-
-  if (chk == atoi_sit{}) {
-    return buf.index_of('#') == -1;
-  }
-  if (buf.size() < *chk)
-    return false;
-
-  for (auto i = 0; i < *chk; i++) {
-    if (buf[i] != '#')
-      return false;
+  if (pat_s == pat_e)
+    return chk_s == chk_e ? 1 : 0;
+  if (chk_s == chk_e) {
+    while (pat_s != pat_e) {
+      if (*pat_s++ == '#')
+        return 0;
+    }
+    return 1;
   }
 
-  if (buf.size() >= *chk && buf[*chk] == '#')
-    return false;
-
-  return matches(buf.subview(*chk).after, ++chk);
-}
-static_assert(matches("", atoi_sit{}));
-static_assert(!matches("", atoi_sit{"1", ','}));
-static_assert(matches("...", atoi_sit{}));
-static_assert(!matches("...", atoi_sit{"1", ','}));
-
-static_assert(!matches(".#..", atoi_sit{}));
-static_assert(!matches(".#..", atoi_sit{"1,2", ','}));
-
-static_assert(matches(".#..", atoi_sit{"1", ','}));
-static_assert(!matches(".#..", atoi_sit{"1,1", ','}));
-static_assert(!matches(".##.", atoi_sit{"1,1", ','}));
-static_assert(matches(".#.#.", atoi_sit{"1,1", ','}));
-static_assert(matches("#.##...###", atoi_sit{"1,2,3", ','}));
-
-static_assert(matches("#...###", atoi_sit{" 1,3", ','}));
-static_assert(!matches("#...###", atoi_sit{" 1,1,3", ','}));
-static_assert(matches("#.#.###", atoi_sit{"1,1,3", ','}));
-
-int check(jute::view cbuf, char *buf, jute::view row) {
-  auto [cc, rest] = row.subview(1);
-  if (cc == " ") {
-    auto r = matches(cbuf, {row, ','});
+  if (*pat_s == '?') {
+    *pat_s = '#';
+    auto r = check(pat_s, pat_e, chk_s, chk_e);
+    *pat_s = '.';
+    r += check(pat_s, pat_e, chk_s, chk_e);
+    *pat_s = '?';
     return r;
   }
-  if (cc == "?") {
-    *buf = '#';
-    auto res = check(cbuf, buf + 1, rest);
-    *buf = '.';
-    return res + check(cbuf, buf + 1, rest);
+
+  auto c = *chk_s++;
+  for (auto i = 0; i < c; i++) {
+    if (pat_s == pat_e)
+      return 0;
+    if (*pat_s++ == '.')
+      return 0;
   }
-  *buf = cc[0];
-  return check(cbuf, buf + 1, rest);
+
+  if (pat_s != pat_e && *pat_s++ == '#')
+    return 0;
+
+  return check(pat_s, pat_e, chk_s, chk_e);
 }
 
 int main(int argc, char **argv) {
@@ -66,9 +46,22 @@ int main(int argc, char **argv) {
 
   int res{};
   for (auto row : dt) {
-    char buf[128]{};
-    jute::view bv{buf, (unsigned long)row.index_of(' ')};
-    res += check(bv, buf, row);
+    auto [p, ch] = row.split(' ');
+    hai::varray<char> pat{1024};
+    hai::varray<int> chk{1024};
+
+    atoi_sit chi{ch, ','};
+    for (auto i = 0; i < 1; i++) {
+      if (i != 0)
+        pat.push_back('?');
+      for (auto c : p)
+        pat.push_back(c);
+      for (auto n : chi)
+        chk.push_back(n);
+    }
+    auto r = check(pat.begin(), pat.end(), chk.begin(), chk.end());
+    silog::log(silog::debug, "%2d -- %.*s", r, pat.size(), pat.begin());
+    res += r;
   }
   info("res", res);
 }
