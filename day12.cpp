@@ -4,7 +4,17 @@ import hai;
 import jute;
 import silog;
 
+int rem(auto s, auto e) {
+  int r{};
+  while (s != e) {
+    r += *s++ + 1;
+  }
+  return r - 1;
+}
 int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
+  if (rem(chk_s, chk_e) > pat_e - pat_s)
+    return 0;
+
   while (pat_s != pat_e && *pat_s == '.')
     pat_s++;
 
@@ -18,27 +28,25 @@ int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
     return 1;
   }
 
+  auto r = 0;
+
   if (*pat_s == '?') {
-    *pat_s = '#';
-    auto r = check(pat_s, pat_e, chk_s, chk_e);
-    *pat_s = '.';
-    r += check(pat_s, pat_e, chk_s, chk_e);
-    *pat_s = '?';
-    return r;
+    // test as '.'
+    r = check(pat_s + 1, pat_e, chk_s, chk_e);
   }
 
   auto c = *chk_s++;
   for (auto i = 0; i < c; i++) {
     if (pat_s == pat_e)
-      return 0;
+      return r;
     if (*pat_s++ == '.')
-      return 0;
+      return r;
   }
 
   if (pat_s != pat_e && *pat_s++ == '#')
-    return 0;
+    return r;
 
-  return check(pat_s, pat_e, chk_s, chk_e);
+  return r + check(pat_s, pat_e, chk_s, chk_e);
 }
 
 int main(int argc, char **argv) {
@@ -51,7 +59,7 @@ int main(int argc, char **argv) {
     hai::varray<int> chk{1024};
 
     atoi_sit chi{ch, ','};
-    for (auto i = 0; i < 1; i++) {
+    for (auto i = 0; i < 5; i++) {
       if (i != 0)
         pat.push_back('?');
       for (auto c : p)
