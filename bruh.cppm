@@ -116,19 +116,20 @@ static_assert(!starts_with("onetwo", "two"));
 
 export class atoi_sit {
   jute::view m_data{};
-  char m_split;
+  char m_split{};
 
 public:
   constexpr atoi_sit() = default;
-  constexpr atoi_sit(jute::view v, char spl) : m_data{v}, m_split{spl} {}
+  constexpr atoi_sit(jute::view v, char spl) : m_data{v.trim()}, m_split{spl} {}
 
-  constexpr auto begin() const noexcept {
-    return atoi_sit(m_data.trim(), m_split);
-  }
+  constexpr auto begin() const noexcept { return *this; }
   constexpr auto end() const noexcept { return atoi_sit{}; }
 
   constexpr bool operator!=(const atoi_sit &o) const noexcept {
     return m_data != o.m_data;
+  }
+  constexpr bool operator==(const atoi_sit &o) const noexcept {
+    return !(*this != o);
   }
 
   constexpr auto &operator++() noexcept {
