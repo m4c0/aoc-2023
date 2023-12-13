@@ -11,20 +11,32 @@ struct map {
   int c;
 };
 
+constexpr auto pot(auto n) { return (n & (n - 1)) == 0; }
+
 int check(const int (&m)[20], int n) {
   for (auto i = 0; i < n - 1; i++) {
     silog::log(silog::debug, "%x %x %d/%d", m[i], m[i + 1], i, n);
-    if (m[i] != m[i + 1])
-      continue;
 
+    auto ones = 0;
     auto j = 0;
+    auto broken = false;
     for (; j <= i && j + i + 1 < n; j++) {
-      silog::log(silog::debug, "%x %x %d %d", m[i - j], m[i + j + 1], i - j,
-                 i + j + 1);
-      if (m[i - j] != m[i + j + 1])
-        break;
+      auto bits = m[i - j] ^ m[i + j + 1];
+
+      silog::log(silog::debug, "%x %x %d %d -- %d", m[i - j], m[i + j + 1],
+                 i - j, i + j + 1, bits);
+      if (bits == 0)
+        continue;
+
+      if ((bits & (bits - 1)) == 0) {
+        if (++ones == 1)
+          continue;
+      }
+
+      broken = true;
+      break;
     }
-    if (i + j + 1 == n || j > i) {
+    if (!broken && ones == 1) {
       for (auto k = i + j + 1; k < n; k++)
         silog::log(silog::debug, "%x -- %d %d", m[k], i, j);
       silog::log(silog::debug, "i:%d j:%d %d/%d", i, j, i + j + 1, n);
