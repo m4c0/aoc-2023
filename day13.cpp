@@ -18,14 +18,16 @@ int check(const int (&m)[20], int n) {
       continue;
 
     auto j = 0;
-    for (; j < i && j + i + 1 < n; j++) {
-      silog::log(silog::debug, "%x %x %d %d", m[i - j], m[i + j + 1], j,
+    for (; j <= i && j + i + 1 < n; j++) {
+      silog::log(silog::debug, "%x %x %d %d", m[i - j], m[i + j + 1], i - j,
                  i + j + 1);
       if (m[i - j] != m[i + j + 1])
         break;
     }
-    if (i + j + 1 == n) {
-      info("i", i);
+    if (i + j + 1 == n || j > i) {
+      for (auto k = i + j + 1; k < n; k++)
+        silog::log(silog::debug, "%x -- %d %d", m[k], i, j);
+      silog::log(silog::debug, "i:%d j:%d %d/%d", i, j, i + j + 1, n);
       return i + 1;
     }
   }
@@ -33,6 +35,7 @@ int check(const int (&m)[20], int n) {
   return 0;
 }
 int run(const map &m) {
+  info("mooo", 999999999999999);
   auto r = check(m.orig, m.r) * 100 + check(m.trans, m.c);
   if (r == 0)
     throw 0;
