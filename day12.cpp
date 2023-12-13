@@ -4,17 +4,27 @@ import hai;
 import jute;
 import silog;
 
-int rem(auto s, auto e) {
-  int r{};
-  while (s != e) {
-    r += *s++ + 1;
-  }
-  return r - 1;
-}
-int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
-  if (rem(chk_s, chk_e) > pat_e - pat_s)
-    return 0;
+struct dp {
+  long data[200][200]{};
+};
+dp gdp{};
 
+void reset() {
+  for (auto &row : gdp.data)
+    for (auto &c : row)
+      c = -1;
+}
+long check(auto pat_s, auto pat_e, auto chk_s, auto chk_e);
+
+long mcheck(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
+  auto &memo = gdp.data[pat_e - pat_s][chk_e - chk_s];
+  if (memo >= 0) {
+    return memo;
+  }
+  return memo = check(pat_s, pat_e, chk_s, chk_e);
+}
+
+long check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
   while (pat_s != pat_e && *pat_s == '.')
     pat_s++;
 
@@ -28,11 +38,12 @@ int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
     return 1;
   }
 
-  auto r = 0;
+  long r = 0;
+  // 11607695322318
 
   if (*pat_s == '?') {
     // test as '.'
-    r = check(pat_s + 1, pat_e, chk_s, chk_e);
+    r = mcheck(pat_s + 1, pat_e, chk_s, chk_e);
   }
 
   auto c = *chk_s++;
@@ -46,14 +57,16 @@ int check(auto pat_s, auto pat_e, auto chk_s, auto chk_e) {
   if (pat_s != pat_e && *pat_s++ == '#')
     return r;
 
-  return r + check(pat_s, pat_e, chk_s, chk_e);
+  return r + mcheck(pat_s, pat_e, chk_s, chk_e);
 }
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
-  int res{};
+  long res{};
   for (auto row : dt) {
+    reset();
+
     auto [p, ch] = row.split(' ');
     hai::varray<char> pat{1024};
     hai::varray<int> chk{1024};
@@ -68,7 +81,7 @@ int main(int argc, char **argv) {
         chk.push_back(n);
     }
     auto r = check(pat.begin(), pat.end(), chk.begin(), chk.end());
-    silog::log(silog::debug, "%2d -- %.*s", r, pat.size(), pat.begin());
+    silog::log(silog::debug, "%20ld -- %.*s", r, pat.size(), pat.begin());
     res += r;
   }
   info("res", res);
