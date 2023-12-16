@@ -222,6 +222,7 @@ public:
   static data fake() { return data{slurp("../../data.fake.txt")}; }
   static data of(int argc) { return argc == 1 ? fake() : real(); }
 
+  jute::view raw() const noexcept { return {m_data.begin(), m_data.size()}; }
   auto begin() const noexcept {
     return row_it{{m_data.begin(), m_data.size()}};
   }
