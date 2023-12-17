@@ -212,6 +212,7 @@ export struct data_map {
   int rows;
 
   constexpr auto index(point p) const { return p.y * stride + p.x; }
+  constexpr auto at(unsigned i) const { return data[i]; }
   constexpr auto at(point p) const { return data[index(p)]; }
   constexpr bool inside(point p) const {
     return p.x >= 0 && p.y >= 0 && p.x < cols && p.y < rows;

@@ -12,110 +12,164 @@ constexpr auto step(cardinal c) {
   return vals[c];
 }
 
-int main(int argc, char **argv) {
-  auto dt = data::of(argc);
-  data_map map = dt.map();
+struct walk {
+  point p{-1, -1};
+  cardinal c{X};
+  int s{-1};
+};
+constexpr bool operator==(const walk &a, const walk &b) noexcept {
+  return a.p == b.p && a.c == b.c && a.s == b.s;
+}
+constexpr int hash(const walk &w) noexcept {
+  ;
+  return 0;
+}
 
-  const point start{};
+constexpr const auto invalid = 9999999999L;
+struct node {
+  walk came_from{};
+  long f_score{invalid};
+  long g_score{invalid};
+};
+
+struct bucket {
+  walk key;
+  node val;
+  bucket *next{};
+  bucket *prev{};
+};
+struct blist {
+  bucket *head{};
+  bucket *tail{};
+};
+class hashmap {
+  blist map[256]{};
+
+public:
+  node &operator[](walk k) {
+    auto h = hash(k);
+    auto &bl = map[h];
+    auto p = bl.head;
+    while (p) {
+      if (p->key == k) {
+        break;
+      }
+      p = p->next;
+    }
+    if (p) {
+      return p->val;
+    } else {
+      auto n = new bucket{k, {}, nullptr, bl.tail};
+      if (bl.tail) {
+        bl.tail->next = n;
+      } else {
+        bl.head = n;
+      }
+      bl.tail = n;
+      return n->val;
+    }
+  }
+};
+
+data_map map;
+
+long astar(const walk &start) {
   const point goal{map.cols - 1, map.rows - 1};
 
-  const unsigned sz = map.data.size();
+  const auto sz = static_cast<unsigned>(map.data.size());
+  hai::varray<walk> open{sz};
+  open.push_back(start);
 
-  hai::array<char> dbg{sz};
-  hai::array<long> dist{sz};
-  hai::array<point> prev{sz};
-  hai::varray<point> q{sz};
+  hashmap nodes{};
 
-  for (auto y = 0; y < map.rows; y++) {
-    for (auto x = 0; x < map.cols; x++) {
-      point p{x, y};
-      auto i = map.index(p);
-      dist[i] = 9999999999;
-      prev[i] = {-1, -1};
-      dbg[i] = map.at(p);
-      q.push_back(p);
-    }
-  }
-  dist[map.index(start)] = 0;
-  prev[map.index(start)] = {};
+  const auto h = [&](point p) {
+    auto d = abs(goal - p);
+    // worst case, we walk a manhattan's distance of a path with only "9"s
+    return 9 * (d.x + d.y);
+  };
 
-  while (q.size() > 0) {
-    const auto min_dist_u = [&] {
-      long min{999999999};
-      int min_i;
-      for (auto i = 0; i < q.size(); i++) {
-        auto d = dist[map.index(q[i])];
-        if (min < d)
-          continue;
+  nodes[start].g_score = 0;
+  nodes[start].f_score = h(start.p);
 
-        min = d;
+  while (open.size() > 0) {
+    long min_f = invalid;
+    walk current;
+    int min_i = -1;
+    node *cur_n;
+    for (auto i = 0; i < open.size(); i++) {
+      auto &n = nodes[open[i]];
+      if (n.f_score < min_f) {
         min_i = i;
+        current = open[i];
+        cur_n = &n;
+        min_f = n.f_score;
       }
-      point u = q[min_i];
-      q[min_i] = q.pop_back();
-      return u;
-    };
-    const auto qhas = [&](point v) {
-      for (auto qq : q) {
-        if (qq == v)
-          return true;
+    }
+    if (current.p == goal) {
+      hai::array<char> dbg{static_cast<unsigned>(map.data.size() + 1)};
+      for (auto i = 0; i < dbg.size(); i++) {
+        dbg[i] = map.data[i];
       }
-      return false;
-    };
-    const auto next = [&](point u, cardinal c, int n) {
-      auto v = u + step(c) * n;
-      if (!map.inside(v))
+      while (current.p != start.p) {
+        constexpr const char sym[4]{'^', 'v', '<', '>'};
+        auto &n = nodes[current];
+        dbg[map.index(current.p)] = sym[current.c];
+        current = n.came_from;
+      }
+      fprintf(stderr, "%s", dbg.begin());
+      return cur_n->g_score;
+    }
+
+    open[min_i] = open.pop_back();
+
+    const auto next = [&](walk nei) {
+      if (!map.inside(nei.p))
         return;
-      if (!qhas(v))
-        return;
+      // if (cur_n->came_from == nei) return;
+      // if (cur_n->dir_from == c && cur_n->strg == 2) return;
 
-      auto alt = dist[map.index(u)];
-      for (auto nn = 1; nn <= n; nn++) {
-        alt += map.at(u + step(c) * nn) - '0';
-      }
-      if (alt < dist[map.index(v)]) {
-        dist[map.index(v)] = alt;
-        prev[map.index(v)] = u;
+      auto &nein = nodes[nei];
+      auto d = map.at(nei.p) - '0';
+      auto tgs = cur_n->g_score + d;
+      if (tgs < nein.g_score) {
+        nein.came_from = current;
+        nein.g_score = tgs;
+        nein.f_score = tgs + h(nei.p);
+
+        for (auto p : open) {
+          if (p == nei)
+            return;
+        }
+        open.push_back(nei);
       }
     };
-    const auto nexts = [&](point u, cardinal c) {
-      for (auto i = 1; i <= 3; i++) {
-        next(u, c, i);
-      }
-    };
 
-    auto u = min_dist_u();
-    auto d = u - prev[map.index(u)];
-    if (d.x == 0) {
-      nexts(u, E);
-      nexts(u, W);
+    if (current.s < 3) {
+      walk cont = current;
+      cont.p = cont.p + step(cont.c);
+      cont.s++;
+      next(cont);
     }
-    if (d.y == 0) {
-      nexts(u, S);
-      nexts(u, N);
-    }
+
+    walk turn{};
+    turn.c = static_cast<cardinal>(current.c ^ 2);
+    turn.p = current.p + step(turn.c);
+    turn.s = 1;
+    next(turn);
+
+    turn.c = static_cast<cardinal>(current.c ^ 3);
+    turn.p = current.p + step(turn.c);
+    turn.s = 1;
+    next(turn);
   }
 
-  long res{};
-  auto u = goal;
-  while (u != start) {
-    auto pu = prev[map.index(u)];
-    while (u != pu) {
-      res += map.at(u) - '0';
-      dbg[map.index(u)] = '.';
-      auto d = pu - u;
-      if (d.x > 0)
-        u = u + point{1, 0};
-      if (d.x < 0)
-        u = u - point{1, 0};
-      if (d.y > 0)
-        u = u + point{0, 1};
-      if (d.y < 0)
-        u = u - point{0, 1};
-    }
-  }
-  for (auto i = 0; i < map.rows; i++) {
-    silog::log(silog::debug, "%s", dbg.begin() + i * map.stride);
-  }
-  info("res", res);
+  return invalid;
+}
+
+int main(int argc, char **argv) {
+  auto dt = data::of(argc);
+  map = dt.map();
+
+  info("s", astar({{}, S, 1}));
+  info("e", astar({{}, E, 1}));
 }
