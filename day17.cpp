@@ -28,7 +28,6 @@ long astar() {
     cardinal dir_from{X};
     long f_score{invalid};
     long g_score{invalid};
-    int strg{};
   };
   hai::array<node> nodes{sz};
 
@@ -73,24 +72,27 @@ long astar() {
 
     open[min_i] = open.pop_back();
 
-    const auto next = [&](cardinal c) {
-      auto nei = current + step(c);
+    const auto next = [&](cardinal c, int mult) {
+      if (cur_n->dir_from / 2 == c / 2)
+        return;
+
+      auto nei = current + step(c) * mult;
       if (!map.inside(nei))
         return;
       if (cur_n->came_from == nei)
         return;
-      if (cur_n->dir_from == c && cur_n->strg == 2)
-        return;
 
       auto &nein = nodes[map.index(nei)];
-      auto d = map.at(nei) - '0';
+      int d = 0;
+      for (auto i = 1; i <= mult; i++) {
+        d += map.at(current + step(c) * i) - '0';
+      }
       auto tgs = cur_n->g_score + d;
       if (tgs < nein.g_score) {
         nein.came_from = current;
         nein.dir_from = c;
         nein.g_score = tgs;
         nein.f_score = tgs + h(nei);
-        nein.strg = (cur_n->dir_from == c) ? cur_n->strg + 1 : 0;
 
         for (auto p : open) {
           if (p == nei)
@@ -99,11 +101,16 @@ long astar() {
         open.push_back(nei);
       }
     };
+    const auto nl = [&](cardinal c) {
+      for (auto i = 1; i <= 3; i++) {
+        next(c, i);
+      }
+    };
 
-    next(N);
-    next(S);
-    next(W);
-    next(E);
+    nl(N);
+    nl(S);
+    nl(W);
+    nl(E);
   }
 
   return invalid;

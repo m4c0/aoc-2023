@@ -53,6 +53,9 @@ export constexpr point operator+(const point &a, const point &b) noexcept {
 export constexpr point operator-(const point &a, const point &b) noexcept {
   return {a.x - b.x, a.y - b.y};
 }
+export constexpr point operator*(const point &a, auto b) noexcept {
+  return {a.x * b, a.y * b};
+}
 export constexpr bool operator==(const point &a, const point &b) noexcept {
   return a.x == b.x && a.y == b.y;
 }
