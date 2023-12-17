@@ -202,6 +202,12 @@ public:
   }
   constexpr auto operator*() const noexcept { return line; }
 };
+export struct data_map {
+  jute::view data;
+  int stride;
+  int cols;
+  int rows;
+};
 export class data {
   hai::array<char> m_data;
 
@@ -212,7 +218,21 @@ public:
   static data fake() { return data{slurp("../../data.fake.txt")}; }
   static data of(int argc) { return argc == 1 ? fake() : real(); }
 
-  jute::view raw() const noexcept { return {m_data.begin(), m_data.size()}; }
+  constexpr jute::view raw() const noexcept {
+    return {m_data.begin(), m_data.size()};
+  }
+
+  constexpr data_map map() const noexcept {
+    auto map = raw();
+    auto cols = map.index_of('\n');
+    return data_map{
+        .data = map,
+        .stride = cols + 1,
+        .cols = cols,
+        .rows = static_cast<int>(map.size() / (cols + 1)),
+    };
+  }
+
   auto begin() const noexcept {
     return row_it{{m_data.begin(), m_data.size()}};
   }
