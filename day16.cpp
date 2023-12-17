@@ -19,6 +19,12 @@ auto mp(point p) { return map[p.y * (cols + 1) + p.x]; }
 
 // TODO: detect cycles?
 void move(point p, dir d) {
+  p = p + deltas[d];
+  if (p.x < 0 || p.y < 0 || p.x >= cols || p.y >= rows) {
+    // silog::log(silog::debug, "done");
+    return;
+  }
+
   // silog::log(silog::debug, "%ld %ld -> %d", p.x, p.y, d);
 
   if (vis(p) & (1 << d))
@@ -26,14 +32,7 @@ void move(point p, dir d) {
 
   vis(p) |= (1 << d);
 
-  p = p + deltas[d];
-  if (p.x < 0 || p.y < 0 || p.x >= cols || p.y >= rows) {
-    // silog::log(silog::debug, "done");
-    return;
-  }
-
   auto c = mp(p);
-
   if (c == '.' || c == passthru[d]) {
   } else if (c == passthru[d ^ 2]) {
     d = static_cast<dir>(d ^ 2);
@@ -57,7 +56,19 @@ int main(int argc, char **argv) {
 
   visited.set_capacity(map.size());
 
-  move({0, 0}, E);
+  move({-1, 0}, E);
+
+  for (auto y = 0; y < rows; y++) {
+    for (auto x = 0; x < cols; x++) {
+      point p{x, y};
+      if (vis(p))
+        fprintf(stderr, "\e[7m");
+      fprintf(stderr, "%c", mp(p));
+      if (vis(p))
+        fprintf(stderr, "\e[0m");
+    }
+    fprintf(stderr, "\n");
+  }
 
   long res{};
   for (auto v : visited)
