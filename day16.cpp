@@ -19,7 +19,6 @@ auto mp(point p) { return map[p.y * (cols + 1) + p.x]; }
 
 // TODO: detect cycles?
 void move(point p, dir d) {
-repeat:
   // silog::log(silog::debug, "%ld %ld -> %d", p.x, p.y, d);
 
   if (vis(p) & (1 << d))
@@ -35,24 +34,20 @@ repeat:
 
   auto c = mp(p);
 
-  if (c == '.' || c == passthru[d])
-    goto repeat;
-
-  if (c == passthru[d ^ 2]) {
+  if (c == '.' || c == passthru[d]) {
+  } else if (c == passthru[d ^ 2]) {
     d = static_cast<dir>(d ^ 2);
     move(p, static_cast<dir>(d ^ 1));
-    goto repeat;
-  }
-  if (c == '/') {
+  } else if (c == '/') {
     d = static_cast<dir>(d ^ 3);
-    goto repeat;
-  }
-  if (c == '\\') {
+  } else if (c == '\\') {
     d = static_cast<dir>(d ^ 2);
-    goto repeat;
   }
+
+  move(p, d);
 }
 
+#include <stdio.h>
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
