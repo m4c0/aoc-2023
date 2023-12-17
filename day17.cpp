@@ -12,113 +12,110 @@ constexpr auto step(cardinal c) {
   return vals[c];
 }
 
-data_map map;
+int main(int argc, char **argv) {
+  auto dt = data::of(argc);
+  data_map map = dt.map();
 
-long astar() {
   const point start{};
   const point goal{map.cols - 1, map.rows - 1};
 
-  const auto sz = static_cast<unsigned>(map.data.size());
-  hai::varray<point> open{sz};
-  open.push_back(start);
+  const unsigned sz = map.data.size();
 
-  constexpr const auto invalid = 9999999999L;
-  struct node {
-    point came_from{};
-    cardinal dir_from{X};
-    long f_score{invalid};
-    long g_score{invalid};
-  };
-  hai::array<node> nodes{sz};
+  hai::array<char> dbg{sz};
+  hai::array<long> dist{sz};
+  hai::array<point> prev{sz};
+  hai::varray<point> q{sz};
 
-  const auto h = [&](auto p) {
-    // auto d = abs(goal - p);
-    //// worst case, we walk a manhattan's distance of a path with only "9"s
-    // return 9 * (d.x + d.y);
-    return 0;
-  };
+  for (auto y = 0; y < map.rows; y++) {
+    for (auto x = 0; x < map.cols; x++) {
+      point p{x, y};
+      auto i = map.index(p);
+      dist[i] = 9999999999;
+      prev[i] = {-1, -1};
+      dbg[i] = map.at(p);
+      q.push_back(p);
+    }
+  }
+  dist[map.index(start)] = 0;
+  prev[map.index(start)] = {};
 
-  nodes[map.index(start)].g_score = 0;
-  nodes[map.index(start)].f_score = h(start);
+  while (q.size() > 0) {
+    const auto min_dist_u = [&] {
+      long min{999999999};
+      int min_i;
+      for (auto i = 0; i < q.size(); i++) {
+        auto d = dist[map.index(q[i])];
+        if (min < d)
+          continue;
 
-  while (open.size() > 0) {
-    long min_f = invalid;
-    point current;
-    int min_i = -1;
-    node *cur_n;
-    for (auto i = 0; i < open.size(); i++) {
-      auto &n = nodes[map.index(open[i])];
-      if (n.f_score < min_f) {
+        min = d;
         min_i = i;
-        current = open[i];
-        cur_n = &n;
-        min_f = n.f_score;
       }
-    }
-    if (current == goal) {
-      hai::array<char> dbg{static_cast<unsigned>(map.data.size() + 1)};
-      for (auto i = 0; i < dbg.size(); i++) {
-        dbg[i] = map.data[i];
+      point u = q[min_i];
+      q[min_i] = q.pop_back();
+      return u;
+    };
+    const auto qhas = [&](point v) {
+      for (auto qq : q) {
+        if (qq == v)
+          return true;
       }
-      while (current != start) {
-        constexpr const char sym[4]{'^', 'v', '<', '>'};
-        auto &n = nodes[map.index(current)];
-        dbg[map.index(current)] = sym[n.dir_from];
-        current = n.came_from;
-      }
-      fprintf(stderr, "%s", dbg.begin());
-      return cur_n->g_score;
-    }
-
-    open[min_i] = open.pop_back();
-
-    const auto next = [&](cardinal c, int mult) {
-      if (cur_n->dir_from / 2 == c / 2)
+      return false;
+    };
+    const auto next = [&](point u, cardinal c, int n) {
+      auto v = u + step(c) * n;
+      if (!map.inside(v))
+        return;
+      if (!qhas(v))
         return;
 
-      auto nei = current + step(c) * mult;
-      if (!map.inside(nei))
-        return;
-      if (cur_n->came_from == nei)
-        return;
-
-      auto &nein = nodes[map.index(nei)];
-      int d = 0;
-      for (auto i = 1; i <= mult; i++) {
-        d += map.at(current + step(c) * i) - '0';
+      auto alt = dist[map.index(u)];
+      for (auto nn = 1; nn <= n; nn++) {
+        alt += map.at(u + step(c) * nn) - '0';
       }
-      auto tgs = cur_n->g_score + d;
-      if (tgs < nein.g_score) {
-        nein.came_from = current;
-        nein.dir_from = c;
-        nein.g_score = tgs;
-        nein.f_score = tgs + h(nei);
-
-        for (auto p : open) {
-          if (p == nei)
-            return;
-        }
-        open.push_back(nei);
+      if (alt < dist[map.index(v)]) {
+        dist[map.index(v)] = alt;
+        prev[map.index(v)] = u;
       }
     };
-    const auto nl = [&](cardinal c) {
+    const auto nexts = [&](point u, cardinal c) {
       for (auto i = 1; i <= 3; i++) {
-        next(c, i);
+        next(u, c, i);
       }
     };
 
-    nl(N);
-    nl(S);
-    nl(W);
-    nl(E);
+    auto u = min_dist_u();
+    auto d = u - prev[map.index(u)];
+    if (d.x == 0) {
+      nexts(u, E);
+      nexts(u, W);
+    }
+    if (d.y == 0) {
+      nexts(u, S);
+      nexts(u, N);
+    }
   }
 
-  return invalid;
-}
-
-int main(int argc, char **argv) {
-  auto dt = data::of(argc);
-  map = dt.map();
-
-  info("res", astar());
+  long res{};
+  auto u = goal;
+  while (u != start) {
+    auto pu = prev[map.index(u)];
+    while (u != pu) {
+      res += map.at(u) - '0';
+      dbg[map.index(u)] = '.';
+      auto d = pu - u;
+      if (d.x > 0)
+        u = u + point{1, 0};
+      if (d.x < 0)
+        u = u - point{1, 0};
+      if (d.y > 0)
+        u = u + point{0, 1};
+      if (d.y < 0)
+        u = u - point{0, 1};
+    }
+  }
+  for (auto i = 0; i < map.rows; i++) {
+    silog::log(silog::debug, "%s", dbg.begin() + i * map.stride);
+  }
+  info("res", res);
 }
