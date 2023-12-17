@@ -41,16 +41,6 @@ static_assert(atoi("10") == 10);
 static_assert(atoi("123") == 123);
 static_assert(atoi("-123") == -123);
 
-export void info(const char *label, int val) {
-  silog::log(silog::info, "%s: %d", label, val);
-}
-export void info(const char *label, long val) {
-  silog::log(silog::info, "%s: %ld", label, val);
-}
-export void info(const char *label, jute::view val) {
-  silog::log(silog::info, "%s: [%.*s]", label, (int)val.size(), val.data());
-}
-
 export constexpr int abs(int a) noexcept { return a >= 0 ? a : -a; }
 
 export struct point {
@@ -228,3 +218,16 @@ public:
   }
   auto end() const noexcept { return row_it{}; }
 };
+
+export void info(const char *label, int val) {
+  silog::log(silog::info, "%s: %d", label, val);
+}
+export void info(const char *label, long val) {
+  silog::log(silog::info, "%s: %ld", label, val);
+}
+export void info(const char *label, jute::view val) {
+  silog::log(silog::info, "%s: [%.*s]", label, (int)val.size(), val.data());
+}
+export void info(const char *label, point p) {
+  silog::log(silog::info, "%s: %ldx%ld", label, p.x, p.y);
+}
