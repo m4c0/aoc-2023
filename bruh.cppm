@@ -208,12 +208,13 @@ export struct data_map {
   int cols;
   int rows;
 
-  constexpr auto index(point p) { return p.y * stride + p.x; }
-  constexpr bool inside(point p) {
+  constexpr auto index(point p) const { return p.y * stride + p.x; }
+  constexpr auto at(point p) const { return data[index(p)]; }
+  constexpr bool inside(point p) const {
     return p.x >= 0 && p.y >= 0 && p.x < cols && p.y < rows;
   }
 
-  void dump() {
+  void dump() const {
     for (auto i = 0; i < rows; i++) {
       silog::log(silog::debug, "%.*s", cols, data.begin() + i * stride);
     }
