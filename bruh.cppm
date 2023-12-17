@@ -207,6 +207,17 @@ export struct data_map {
   int stride;
   int cols;
   int rows;
+
+  constexpr auto index(point p) { return p.y * stride + p.x; }
+  constexpr bool inside(point p) {
+    return p.x >= 0 && p.y >= 0 && p.x < cols && p.y < rows;
+  }
+
+  void dump() {
+    for (auto i = 0; i < rows; i++) {
+      silog::log(silog::debug, "%.*s", cols, data.begin() + i * stride);
+    }
+  }
 };
 export class data {
   hai::array<char> m_data;
