@@ -46,6 +46,19 @@ void move(point p, dir d) {
   move(p, d);
 }
 
+long run(point p, dir d) {
+  for (auto &v : visited)
+    v = {};
+
+  move(p, d);
+
+  long res{};
+  for (auto v : visited)
+    if (v)
+      res++;
+  return res;
+}
+
 #include <stdio.h>
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
@@ -56,7 +69,17 @@ int main(int argc, char **argv) {
 
   visited.set_capacity(map.size());
 
-  move({-1, 0}, E);
+  long res{};
+  for (auto i = 0; i < rows; i++) {
+    mx(res, run({-1, i}, E));
+    mx(res, run({cols, i}, W));
+  }
+  for (auto i = 0; i < cols; i++) {
+    mx(res, run({i, -1}, S));
+    mx(res, run({i, rows}, N));
+  }
+  info("res", res);
+  return 0;
 
   for (auto y = 0; y < rows; y++) {
     for (auto x = 0; x < cols; x++) {
@@ -69,10 +92,4 @@ int main(int argc, char **argv) {
     }
     fprintf(stderr, "\n");
   }
-
-  long res{};
-  for (auto v : visited)
-    if (v)
-      res++;
-  info("res", res);
 }
