@@ -28,14 +28,15 @@ long astar() {
     cardinal dir_from{X};
     long f_score{invalid};
     long g_score{invalid};
-    unsigned strg{};
+    int strg{};
   };
   hai::array<node> nodes{sz};
 
   const auto h = [&](auto p) {
-    auto d = abs(goal - p);
-    // worst case, we walk a manhattan's distance of a path with only "9"s
-    return 9 * (d.x + d.y);
+    // auto d = abs(goal - p);
+    //// worst case, we walk a manhattan's distance of a path with only "9"s
+    // return 9 * (d.x + d.y);
+    return 0;
   };
 
   nodes[map.index(start)].g_score = 0;
@@ -78,7 +79,7 @@ long astar() {
         return;
       if (cur_n->came_from == nei)
         return;
-      if (cur_n->dir_from == c && cur_n->strg == 3)
+      if (cur_n->dir_from == c && cur_n->strg == 2)
         return;
 
       auto &nein = nodes[map.index(nei)];
@@ -89,7 +90,7 @@ long astar() {
         nein.dir_from = c;
         nein.g_score = tgs;
         nein.f_score = tgs + h(nei);
-        nein.strg = cur_n->strg + 1;
+        nein.strg = (cur_n->dir_from == c) ? cur_n->strg + 1 : 0;
 
         for (auto p : open) {
           if (p == nei)
