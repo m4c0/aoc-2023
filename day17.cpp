@@ -116,7 +116,7 @@ long astar(const walk &start) {
         dbg[map.index(current.p)] = sym[current.c];
         current = n.came_from->data;
       }
-      fprintf(stderr, "%s", dbg.begin());
+      // fprintf(stderr, "%s", dbg.begin());
       return cur_n->g_score;
     }
 
@@ -168,5 +168,6 @@ int main(int argc, char **argv) {
   auto dt = data::of(argc);
   map = dt.map();
 
-  info("res", astar({{}, S, 1}));
+  info("s", astar({{}, S, 1}));
+  info("e", astar({{}, E, 1}));
 }
