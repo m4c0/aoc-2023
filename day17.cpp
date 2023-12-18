@@ -21,8 +21,7 @@ constexpr bool operator==(const walk &a, const walk &b) noexcept {
   return a.p == b.p && a.c == b.c && a.s == b.s;
 }
 constexpr int hash(const walk &w) noexcept {
-  ;
-  return 0;
+  return (w.p.x * 23) ^ (w.p.y * 17) ^ (w.c * 5) ^ w.s;
 }
 
 constexpr const auto invalid = 9999999999L;
@@ -43,11 +42,11 @@ struct blist {
   bucket *tail{};
 };
 class hashmap {
-  blist map[256]{};
+  blist map[256 * 16]{};
 
 public:
   node &operator[](walk k) {
-    auto h = hash(k);
+    auto h = hash(k) % (256 * 16);
     auto &bl = map[h];
     auto p = bl.head;
     while (p) {
@@ -85,7 +84,7 @@ long astar(const walk &start) {
   const auto h = [&](point p) {
     auto d = abs(goal - p);
     // worst case, we walk a manhattan's distance of a path with only "9"s
-    return 9 * (d.x + d.y);
+    return 1 * (d.x + d.y);
   };
 
   nodes[start].g_score = 0;
