@@ -83,7 +83,6 @@ long astar(const walk &start) {
 
   const auto h = [&](point p) {
     auto d = abs(goal - p);
-    // worst case, we walk a manhattan's distance of a path with only "9"s
     return 1 * (d.x + d.y);
   };
 
@@ -169,6 +168,5 @@ int main(int argc, char **argv) {
   auto dt = data::of(argc);
   map = dt.map();
 
-  info("s", astar({{}, S, 1}));
-  info("e", astar({{}, E, 1}));
+  info("res", astar({{}, S, 1}));
 }
