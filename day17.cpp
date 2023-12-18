@@ -26,7 +26,8 @@ constexpr int hash(const walk &w) noexcept {
 
 constexpr const auto invalid = 9999999999L;
 struct node {
-  walk came_from{};
+  walk data{};
+  node *came_from{};
   long f_score{invalid};
   long g_score{invalid};
 };
@@ -65,6 +66,7 @@ public:
         bl.head = n;
       }
       bl.tail = n;
+      n->val.data = k;
       return n->val;
     }
   }
@@ -76,8 +78,7 @@ long astar(const walk &start) {
   const point goal{map.cols - 1, map.rows - 1};
 
   const auto sz = static_cast<unsigned>(map.data.size());
-  hai::varray<walk> open{sz};
-  open.push_back(start);
+  hai::varray<node *> open{sz};
 
   hashmap nodes{};
 
@@ -88,6 +89,7 @@ long astar(const walk &start) {
 
   nodes[start].g_score = 0;
   nodes[start].f_score = h(start.p);
+  open.push_back(&nodes[start]);
 
   while (open.size() > 0) {
     long min_f = invalid;
@@ -95,10 +97,10 @@ long astar(const walk &start) {
     int min_i = -1;
     node *cur_n;
     for (auto i = 0; i < open.size(); i++) {
-      auto &n = nodes[open[i]];
+      auto &n = *(open[i]);
       if (n.f_score < min_f) {
         min_i = i;
-        current = open[i];
+        current = open[i]->data;
         cur_n = &n;
         min_f = n.f_score;
       }
@@ -112,7 +114,7 @@ long astar(const walk &start) {
         constexpr const char sym[4]{'^', 'v', '<', '>'};
         auto &n = nodes[current];
         dbg[map.index(current.p)] = sym[current.c];
-        current = n.came_from;
+        current = n.came_from->data;
       }
       fprintf(stderr, "%s", dbg.begin());
       return cur_n->g_score;
@@ -123,22 +125,20 @@ long astar(const walk &start) {
     const auto next = [&](walk nei) {
       if (!map.inside(nei.p))
         return;
-      // if (cur_n->came_from == nei) return;
-      // if (cur_n->dir_from == c && cur_n->strg == 2) return;
 
       auto &nein = nodes[nei];
       auto d = map.at(nei.p) - '0';
       auto tgs = cur_n->g_score + d;
       if (tgs < nein.g_score) {
-        nein.came_from = current;
+        nein.came_from = cur_n;
         nein.g_score = tgs;
         nein.f_score = tgs + h(nei.p);
 
         for (auto p : open) {
-          if (p == nei)
+          if (p->data == nei)
             return;
         }
-        open.push_back(nei);
+        open.push_back(&nein);
       }
     };
 
