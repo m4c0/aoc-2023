@@ -256,6 +256,10 @@ public:
 };
 
 export enum cardinal { X = -1, N, S, W, E };
+export constexpr auto step(cardinal c) {
+  constexpr const point vals[4]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+  return vals[c];
+}
 
 export void info(const char *label, int val) {
   silog::log(silog::info, "%s: %d", label, val);

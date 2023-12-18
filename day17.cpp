@@ -6,11 +6,6 @@ import silog;
 
 #include <stdio.h>
 
-constexpr auto step(cardinal c) {
-  constexpr const point vals[4]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
-  return vals[c];
-}
-
 struct walk {
   point p{-1, -1};
   cardinal c{X};

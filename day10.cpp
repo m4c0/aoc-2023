@@ -12,10 +12,6 @@ int pstride;
 char &pat(point p) { return purged[p.y * pstride + p.x]; }
 
 constexpr const cardinal cloop[4]{N, S, W, E};
-constexpr auto step(cardinal c) {
-  constexpr const point vals[4]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
-  return vals[c];
-}
 constexpr const jute::view map[4]{
     "| 7F",
     " |JL",
