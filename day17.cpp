@@ -6,7 +6,6 @@ import silog;
 
 #include <stdio.h>
 
-enum cardinal { X = -1, N, S, W, E };
 constexpr auto step(cardinal c) {
   constexpr const point vals[4]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
   return vals[c];

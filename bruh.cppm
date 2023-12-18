@@ -255,6 +255,8 @@ public:
   auto end() const noexcept { return row_it{}; }
 };
 
+export enum cardinal { X = -1, N, S, W, E };
+
 export void info(const char *label, int val) {
   silog::log(silog::info, "%s: %d", label, val);
 }

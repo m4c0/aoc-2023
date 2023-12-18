@@ -4,7 +4,7 @@ import hai;
 import jute;
 import silog;
 
-enum dir { N, S, W, E };
+using dir = cardinal;
 
 constexpr point deltas[4] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
 constexpr char passthru[4] = {'|', '|', '-', '-'};

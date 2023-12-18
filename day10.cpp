@@ -11,7 +11,6 @@ hai::array<char> purged{};
 int pstride;
 char &pat(point p) { return purged[p.y * pstride + p.x]; }
 
-enum cardinal { X = -1, N, S, W, E };
 constexpr const cardinal cloop[4]{N, S, W, E};
 constexpr auto step(cardinal c) {
   constexpr const point vals[4]{{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
