@@ -142,23 +142,25 @@ long astar(const walk &start) {
       }
     };
 
-    if (current.s < 3) {
+    if (current.s < 10) {
       walk cont = current;
       cont.p = cont.p + step(cont.c);
       cont.s++;
       next(cont);
     }
 
-    walk turn{};
-    turn.c = static_cast<cardinal>(current.c ^ 2);
-    turn.p = current.p + step(turn.c);
-    turn.s = 1;
-    next(turn);
+    if (current.s >= 4) {
+      walk turn{};
+      turn.c = static_cast<cardinal>(current.c ^ 2);
+      turn.p = current.p + step(turn.c);
+      turn.s = 1;
+      next(turn);
 
-    turn.c = static_cast<cardinal>(current.c ^ 3);
-    turn.p = current.p + step(turn.c);
-    turn.s = 1;
-    next(turn);
+      turn.c = static_cast<cardinal>(current.c ^ 3);
+      turn.p = current.p + step(turn.c);
+      turn.s = 1;
+      next(turn);
+    }
   }
 
   return invalid;
