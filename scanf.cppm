@@ -3,7 +3,7 @@ import jute;
 
 export namespace scan {
 template <typename T> struct parse {
-  constexpr bool operator()(T &v, jute::view &in, jute::view &fmt);
+  constexpr bool operator()(jute::view &in, jute::view &fmt, T &v);
 };
 } // namespace scan
 
