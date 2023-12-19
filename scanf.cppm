@@ -75,6 +75,15 @@ template <> struct parse<long> {
     return parse_int<long>(inp, fmt, v);
   }
 };
+template <> struct parse<char> {
+  constexpr bool operator()(jute::view &inp, jute::view &fmt, char &v) {
+    if (inp.size() == 0)
+      return false;
+    v = inp[0];
+    inp = inp.subview(1).after;
+    return true;
+  }
+};
 template <> struct parse<jute::view> {
   constexpr bool operator()(jute::view &inp, jute::view &fmt, jute::view &v) {
     auto i = 0;
@@ -99,10 +108,7 @@ namespace {
 static constexpr const auto ctl_chr = '\v';
 
 template <typename... Args> struct helper {
-  constexpr bool scanf(jute::view inp, jute::view fmt, Args &...a) {
-    throw "unsupported argument type";
-    return false;
-  }
+  constexpr bool scanf(jute::view inp, jute::view fmt, Args &...a);
 };
 template <> struct helper<> {
   constexpr bool scanf(jute::view inp, jute::view fmt) {
@@ -128,7 +134,7 @@ template <typename T, typename... Args> struct helper<T, Args...> {
         return false;
       }
     }
-    return false;
+    throw "more arguments than formats defined";
   }
 };
 } // namespace
@@ -144,6 +150,10 @@ static_assert(scan::f("fine", ""));
 static_assert(scan::f("this is fine", "this is"));
 static_assert(!scan::f("this is fine", "this isnt"));
 
+static_assert('o' == [] {
+  char n;
+  return scan::f("got ok", "got \v", n) ? n : 'f';
+}());
 static_assert(-42 == [] {
   int n;
   return scan::f("got -42", "got \v", n) ? n : 9999;
