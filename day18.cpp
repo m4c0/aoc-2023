@@ -7,18 +7,36 @@ import silog;
 
 constexpr cardinal chr2c(char c) {
   switch (c) {
-  case 'R':
+  case '0':
     return E;
-  case 'L':
-    return W;
-  case 'D':
+  case '1':
     return S;
-  case 'U':
+  case '2':
+    return W;
+  case '3':
     return N;
   default:
     throw 0;
   }
 }
+
+constexpr long hex2i(jute::view v) {
+  long res{};
+  for (auto i = 0; i < v.size(); i++) {
+    res <<= 4;
+
+    if (digit(v[i])) {
+      res |= v[i] - '0';
+    } else {
+      res |= v[i] - 'a' + 10;
+    }
+  }
+  return res;
+}
+static_assert(hex2i("000") == 0x0);
+static_assert(hex2i("00a") == 0xa);
+static_assert(hex2i("123") == 0x123);
+static_assert(hex2i("abc") == 0xabc);
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
@@ -27,11 +45,10 @@ int main(int argc, char **argv) {
 
   point p{};
   for (auto line : dt) {
-    auto [l, lr] = line.split(' ');
-    auto [ns, cl] = lr.split(' ');
+    auto [hex, chr] = line.split('#').after.subview(5);
 
-    auto c = chr2c(l[0]);
-    auto n = atoi(ns);
+    auto c = chr2c(chr[0]);
+    auto n = hex2i(hex);
     auto np = p + step(c) * n;
 
     dug += p.x * np.y;
