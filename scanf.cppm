@@ -2,53 +2,100 @@ export module scanf;
 import jute;
 
 export namespace scan {
-template <typename T> struct result {
-  T v{};
-  jute::view rest;
-};
-
 template <typename T> struct parse {
-  constexpr result<T> operator()(jute::view val);
+  constexpr bool operator()(T &v, jute::view &in, jute::view &fmt);
 };
 } // namespace scan
 
 namespace {
-template <typename T> constexpr auto parse_int(jute::view str) {
-  typename scan::result<T> res{};
+template <typename T>
+constexpr bool parse_int(jute::view &str, jute::view &fmt, T &v) {
+  v = {};
 
   auto st = str[0] == '-' ? 1 : 0;
   auto [l, r] = str.subview(st);
-  for (auto i = 0; i < r.size(); i++) {
+  auto i = 0;
+  for (; i < r.size(); i++) {
     auto c = r[i];
     if (c < '0' || c > '9') {
-      res.rest = r.subview(i).after;
       break;
     }
-    res.v = res.v * 10 + (c - '0');
+    v = v * 10 + (c - '0');
   }
-  res.v *= (st * -2 + 1);
-  return res;
+  v *= (st * -2 + 1);
+  str = r.subview(i).after;
+  return i != 0;
 }
-static_assert(parse_int<int>("10").v == 10);
-static_assert(parse_int<int>("123").v == 123);
-static_assert(parse_int<int>("-123").v == -123);
-static_assert(parse_int<int>("123").rest == "");
-static_assert(parse_int<int>("123 four").rest == " four");
+static_assert(![] {
+  jute::view str = "";
+  jute::view fmt = "";
+  int v;
+  return parse_int(str, fmt, v);
+}());
+static_assert(![] {
+  jute::view str = "asd";
+  jute::view fmt = "";
+  int v;
+  return parse_int(str, fmt, v);
+}());
+static_assert(34 == [] {
+  jute::view str = "34";
+  jute::view fmt = "a";
+  int v;
+  if (!parse_int(str, fmt, v))
+    return 9999;
+  if (str != "")
+    return 9998;
+  if (fmt != "a")
+    return 9997;
+  return v;
+}());
+static_assert(-123 == [] {
+  jute::view str = "-123aaa";
+  jute::view fmt = "xxx";
+  int v;
+  if (!parse_int(str, fmt, v))
+    return 9999;
+  if (str != "aaa")
+    return 9998;
+  if (fmt != "xxx")
+    return 9997;
+  return v;
+}());
 } // namespace
 
 export namespace scan {
 template <> struct parse<int> {
-  constexpr result<int> operator()(jute::view val) {
-    return parse_int<int>(val);
+  constexpr bool operator()(jute::view &inp, jute::view &fmt, int &v) {
+    return parse_int<int>(inp, fmt, v);
   }
 };
 template <> struct parse<long> {
-  constexpr result<long> operator()(jute::view val) {
-    return parse_int<long>(val);
+  constexpr bool operator()(jute::view &inp, jute::view &fmt, long &v) {
+    return parse_int<long>(inp, fmt, v);
+  }
+};
+template <> struct parse<jute::view> {
+  constexpr bool operator()(jute::view &inp, jute::view &fmt, jute::view &v) {
+    auto i = 0;
+    if (fmt == "") {
+      v = inp;
+      return true;
+    }
+    for (; i < inp.size(); i++) {
+      if (inp[i] == fmt[0]) {
+        auto [l, r] = inp.subview(i);
+        v = l;
+        inp = r;
+        return true;
+      }
+    }
+    return false;
   }
 };
 } // namespace scan
 
+namespace {
 static constexpr const auto ctl_chr = '\v';
 
 template <typename... Args> struct helper {
@@ -69,9 +116,13 @@ template <typename T, typename... Args> struct helper<T, Args...> {
     }
     for (auto i = 0; i < fmt.size(); i++) {
       if (fmt[i] == ctl_chr) {
-        auto [vv, rest] = scan::parse<T>()(inp.subview(i).after);
-        v = vv;
-        return helper<Args...>{}.scanf(rest, fmt.subview(i + 1).after, a...);
+        inp = inp.subview(i).after;
+        fmt = fmt.subview(i + 1).after;
+        if (!scan::parse<T>{}(inp, fmt, v)) {
+          return false;
+        }
+
+        return helper<Args...>{}.scanf(inp, fmt, a...);
       }
       if (inp[i] != fmt[i]) {
         return false;
@@ -80,6 +131,7 @@ template <typename T, typename... Args> struct helper<T, Args...> {
     return false;
   }
 };
+} // namespace
 
 export namespace scan {
 template <typename... Args>
@@ -104,4 +156,16 @@ static_assert(12 + 23l == [] {
   int a;
   long b;
   return scan::f("{a=12,b=23}", "{a=\v,b=\v}", a, b) ? a + b : 9999;
+}());
+static_assert("fine" == [] {
+  jute::view v;
+  return scan::f("this is fine", "this is \v", v) ? v : "error";
+}());
+static_assert(![] {
+  jute::view v;
+  return scan::f("this is fine", "this \vnt fine", v);
+}());
+static_assert("is" == [] {
+  jute::view v;
+  return scan::f("this is fine", "this \v fine", v) ? v : "error";
 }());
