@@ -122,7 +122,7 @@ static_assert(test.insts[1].op == gt);
 static_assert(test.insts[1].rhs == 2090);
 static_assert(test.insts[1].outcome == A);
 
-hai::array<wflow> wfs{10240};
+hai::array<wflow> wfs{30 * 30 * 30};
 
 long run(jute::view line) {
   auto xmas = top(line);
@@ -163,8 +163,8 @@ int main(int argc, char **argv) {
   long res{};
   bool running{};
   for (auto line : dt) {
+    info("line", line);
     if (line == "") {
-      info("run", 0);
       running = true;
     } else if (!running) {
       auto i = tow(line);
