@@ -180,30 +180,33 @@ static_assert([] {
   return true;
 }());
 
-class row_it {
+export template <char C> class split_it {
   jute::view line{};
   jute::view rest{};
 
 public:
-  constexpr row_it() = default;
-  constexpr row_it(jute::view buf) {
-    auto [l, r] = buf.split('\n');
+  constexpr split_it() = default;
+  constexpr split_it(jute::view buf) {
+    auto [l, r] = buf.split(C);
     line = l;
     rest = r;
   }
 
-  constexpr bool operator==(const row_it &o) const noexcept {
+  constexpr bool operator==(const split_it &o) const noexcept {
     return o.line.data() == line.data() ||
            (!line.size() && !o.line.size() && !o.rest.size() && !rest.size());
   }
 
-  constexpr row_it &operator++() noexcept { return *this = row_it{rest}; }
-  constexpr row_it operator++(int) noexcept {
-    row_it res = *this;
-    *this = row_it{rest};
+  constexpr split_it &operator++() noexcept { return *this = split_it{rest}; }
+  constexpr split_it operator++(int) noexcept {
+    split_it res = *this;
+    *this = split_it{rest};
     return res;
   }
   constexpr auto operator*() const noexcept { return line; }
+
+  constexpr auto begin() const noexcept { return *this; }
+  constexpr auto end() const noexcept { return split_it<C>{}; }
 };
 export struct data_map {
   jute::view data;
@@ -250,9 +253,9 @@ public:
   }
 
   auto begin() const noexcept {
-    return row_it{{m_data.begin(), m_data.size()}};
+    return split_it<'\n'>{{m_data.begin(), m_data.size()}};
   }
-  auto end() const noexcept { return row_it{}; }
+  auto end() const noexcept { return split_it<'\n'>{}; }
 };
 
 export enum cardinal { X = -1, N, S, W, E };
