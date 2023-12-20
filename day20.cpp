@@ -25,6 +25,12 @@ constexpr bool parse(jute::view &in, id &v) {
   in = r;
   return i > 0;
 }
+constexpr id parse(jute::view in) {
+  id res{};
+  if (!parse(in, res))
+    throw 0;
+  return res;
+}
 
 namespace scan {
 template <> struct parse<id> {
@@ -44,17 +50,19 @@ hai::varray<sgn> signals{1024000};
 class node {
   hai::varray<id> m_targets{100};
   id m_id;
+  hai::varray<id> m_inputs{100};
 
 public:
   explicit constexpr node(id i) : m_id{i} {}
 
   const auto &ident() const noexcept { return m_id; }
+  const auto &inputs() const noexcept { return m_inputs; }
   const auto &targets() const noexcept { return m_targets; }
 
   virtual void take(id from, bool signal) = 0;
-  virtual void add_input(id from) {}
   virtual void dump() {}
 
+  void add_input(id from) { m_inputs.push_back(from); }
   void add_target(id i) { m_targets.push_back(i); }
 
 protected:
@@ -84,16 +92,13 @@ public:
 };
 class comb : public node {
   bool mem[max_id]{};
-  hai::varray<id> m_inputs{max_id};
-
-  void add_input(id from) override { m_inputs.push_back(from); }
 
 public:
   using node::node;
 
   void take(id from, bool signal) override {
     mem[from.v] = signal;
-    for (auto id : m_inputs) {
+    for (auto id : inputs()) {
       if (!mem[id.v]) {
         send(true);
         return;
@@ -108,11 +113,18 @@ public:
 
   void take(id from, bool signal) override { send(signal); }
 };
+class rx : public node {
+public:
+  using node::node;
+
+  void take(id from, bool signal) override {}
+};
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
   node *bcaster{};
+  node *rxn{};
   hai::array<node *> nodes{max_id};
 
   for (auto line : dt) {
@@ -146,6 +158,9 @@ int main(int argc, char **argv) {
     if (!n)
       continue;
     for (auto t : n->targets()) {
+      if (t.s == "rx") {
+        rxn = nodes[t.v] = new rx{t};
+      }
       if (nodes[t.v])
         nodes[t.v]->add_input(n->ident());
     }
@@ -177,6 +192,26 @@ int main(int argc, char **argv) {
     }
     // for (auto s : nodes) s->dump();
   }
+
+  info("rxn", rxn ? "Y" : "N");
+  hai::varray<int> vis{100};
+  const auto back = [&](auto back, node *n, int i) -> void {
+    bool ok{true};
+    for (auto v : vis)
+      if (v == n->ident().v)
+        ok = false;
+
+    silog::log(silog::debug, "%*s%.*s%s", i, "", (int)n->ident().s.size(),
+               n->ident().s.data(), ok ? "" : " loop!");
+    if (!ok)
+      return;
+    vis.push_back(n->ident().v);
+    for (auto nn : n->inputs()) {
+      back(back, nodes[nn.v], i + 2);
+    }
+    vis.pop_back();
+  };
+  back(back, rxn, 0);
 
   long res{hp * lp};
   info("hp", hp);
