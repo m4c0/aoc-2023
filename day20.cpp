@@ -81,38 +81,34 @@ protected:
     }
   }
 };
-static unsigned long gff = 0;
 class ff : public node {
+  bool status{};
+
 public:
   using node::node;
 
   void take(id from, bool signal) override {
     if (!signal) {
-      unsigned long mask = 1UL << ident().v;
-      gff ^= mask;
-      send((gff & mask) != 0);
+      status = !status;
+      send(status);
     }
   }
 };
 class comb : public node {
-  unsigned long mem{};
+  bool mem[max_id]{};
 
 public:
   using node::node;
 
-  void add_input(id i) override {
-    node::add_input(i);
-    mem |= 1 << i.v;
-  }
-
   void take(id from, bool signal) override {
-    unsigned long mask = 1UL << from.v;
-    if (signal) {
-      mem &= ~mask;
-    } else {
-      mem |= mask;
+    mem[from.v] = signal;
+    for (auto id : inputs()) {
+      if (!mem[id.v]) {
+        send(true);
+        return;
+      }
     }
-    send(mem != 0);
+    send(false);
   }
 };
 class bcast : public node {
@@ -121,36 +117,24 @@ public:
 
   void take(id from, bool signal) override { send(signal); }
 };
-class rx : public node {
-public:
-  using node::node;
-
-  void take(id from, bool signal) override {}
-};
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
   node *bcaster{};
-  node *rxn{};
   hai::array<node *> nodes{max_id};
 
   for (auto line : dt) {
     node *n;
-    char tp{};
     id name{};
     jute::view out;
     if (scan::f(line, "broadcaster -> \v", out)) {
       bcaster = n = new bcast{name};
       name.s = "broadcaster";
-    } else if (scan::f(line, "\v\v -> \v", tp, name, out)) {
-      if (tp == '%') {
-        n = new ff{name};
-      } else if (tp == '&') {
-        n = new comb{name};
-      } else {
-        throw 0;
-      }
+    } else if (scan::f(line, "%\v -> \v", name, out)) {
+      n = new ff{name};
+    } else if (scan::f(line, "&\v -> \v", name, out)) {
+      n = new comb{name};
     } else {
       throw 0;
     }
@@ -162,22 +146,30 @@ int main(int argc, char **argv) {
       out = out.subview(1).after.trim();
     }
   }
+  node *rxi;
   for (auto n : nodes) {
     if (!n)
       continue;
     for (auto t : n->targets()) {
       if (t.s == "rx") {
-        rxn = nodes[t.v] = new rx{t};
+        rxi = n;
       }
       if (nodes[t.v])
         nodes[t.v]->add_input(n->ident());
     }
   }
+  if (rxi) {
+    for (auto i : rxi->inputs()) {
+      info("rxi", i.s);
+    }
+    info("rxin", rxi->ident().s);
+  }
 
   long hp{};
   long lp{};
 
-  for (auto rep = 0; rep < 10000000; rep++) {
+  const auto max_reps = 100000;
+  for (auto rep = 0; rep < max_reps; rep++) {
     if (rep % 1000000 == 0)
       info("running", rep);
     if (rep == 1000) {
@@ -192,9 +184,9 @@ int main(int argc, char **argv) {
     for (auto i = 0; i < signals.size(); i++) {
       auto [from, to, v] = signals[i];
 
-      if (rxn && to.v == rxn->ident().v && !v) {
-        info("res 2", rep);
-        return 0;
+      if (rxi && to.v == rxi->ident().v && v) {
+        silog::log(silog::info, "%.*s %d %d", (int)from.s.size(), from.s.data(),
+                   v, rep);
       }
       /*
       silog::log(silog::debug, "%.*s -%s-> %.*s", (int)from.s.size(),
@@ -210,7 +202,7 @@ int main(int argc, char **argv) {
       if (nodes[to.v])
         nodes[to.v]->take(from, v);
     }
-    // for (auto s : nodes) s->dump();
+    // silog::log(silog::info, "%16lx", gff);
   }
   info("meh", 0);
   return 1;
