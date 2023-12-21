@@ -10,22 +10,31 @@ struct id {
   jute::view s;
 };
 constexpr const auto max_id = 30 * 30 * 30;
-constexpr bool parse(jute::view &in, id &v) {
-  v = {};
+jute::view id_map[max_id]{};
+bool parse(jute::view &in, id &v) {
   int i;
   for (i = 0; i < in.size(); i++) {
-    auto c = in[i];
-    if (c < 'a' || c > 'z')
+    if (in[i] < 'a' || in[i] > 'z')
       break;
-    v.v *= 28;
-    v.v += c - 'a' + 1;
   }
   auto [l, r] = in.subview(i);
-  v.s = l;
+  v = {.v = 0, .s = l};
   in = r;
-  return i > 0;
+
+  if (v.s == "")
+    return false;
+
+  for (v.v = 1; v.v < max_id; v.v++) {
+    auto &ii = id_map[v.v];
+    if (ii == "" || ii == v.s) {
+      ii = v.s;
+      break;
+    }
+  }
+
+  return l.size() > 0;
 }
-constexpr id parse(jute::view in) {
+id parse(jute::view in) {
   id res{};
   if (!parse(in, res))
     throw 0;
@@ -34,7 +43,7 @@ constexpr id parse(jute::view in) {
 
 namespace scan {
 template <> struct parse<id> {
-  constexpr bool operator()(jute::view &in, jute::view &fmt, id &v) {
+  bool operator()(jute::view &in, jute::view &fmt, id &v) {
     return ::parse(in, v);
   }
 };
@@ -169,13 +178,25 @@ int main(int argc, char **argv) {
   long hp{};
   long lp{};
 
-  for (auto rep = 0; rep < 1000; rep++) {
+  for (auto rep = 0; rep < 10000000; rep++) {
+    if (rep % 1000000 == 0)
+      info("running", rep);
+    if (rep == 1000) {
+      long res{hp * lp};
+      silog::log(silog::debug, "hp: %ld/39083", hp);
+      silog::log(silog::debug, "lp: %ld/17061", lp);
+      silog::log(silog::debug, "res: %ld/66795063", res);
+    }
     signals.truncate(0);
     bcaster->take({}, false);
     lp++;
     for (auto i = 0; i < signals.size(); i++) {
       auto [from, to, v] = signals[i];
 
+      if (rxn && to.v == rxn->ident().v && !v) {
+        info("res 2", rep);
+        return 0;
+      }
       /*
       silog::log(silog::debug, "%.*s -%s-> %.*s", (int)from.s.size(),
                  from.s.data(), v ? "high" : "low", (int)to.s.size(),
@@ -192,29 +213,6 @@ int main(int argc, char **argv) {
     }
     // for (auto s : nodes) s->dump();
   }
-
-  info("rxn", rxn ? "Y" : "N");
-  hai::varray<int> vis{100};
-  const auto back = [&](auto back, node *n, int i) -> void {
-    bool ok{true};
-    for (auto v : vis)
-      if (v == n->ident().v)
-        ok = false;
-
-    silog::log(silog::debug, "%*s%.*s%s", i, "", (int)n->ident().s.size(),
-               n->ident().s.data(), ok ? "" : " loop!");
-    if (!ok)
-      return;
-    vis.push_back(n->ident().v);
-    for (auto nn : n->inputs()) {
-      back(back, nodes[nn.v], i + 2);
-    }
-    vis.pop_back();
-  };
-  back(back, rxn, 0);
-
-  long res{hp * lp};
-  info("hp", hp);
-  info("lp", lp);
-  info("res", res);
+  info("meh", 0);
+  return 1;
 }
