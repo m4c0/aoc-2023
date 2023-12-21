@@ -5,7 +5,11 @@ import jute;
 import scanf;
 import silog;
 
+int dp[150][150][64]{};
 void grub(auto &res, const auto &map, point p, int steps) {
+  if (dp[p.y][p.x][steps] > 0) {
+    return;
+  }
   if (!map.inside(p))
     return;
 
@@ -17,6 +21,7 @@ void grub(auto &res, const auto &map, point p, int steps) {
     return;
   }
 
+  dp[p.y][p.x][steps] = 1;
   for (auto c : cardinals) {
     grub(res, map, p + step(c), steps - 1);
   }
