@@ -71,7 +71,7 @@ public:
   virtual void take(id from, bool signal) = 0;
   virtual void dump() {}
 
-  void add_input(id from) { m_inputs.push_back(from); }
+  virtual void add_input(id from) { m_inputs.push_back(from); }
   void add_target(id i) { m_targets.push_back(i); }
 
 protected:
@@ -81,39 +81,38 @@ protected:
     }
   }
 };
+static unsigned long gff = 0;
 class ff : public node {
-  bool status{};
-
 public:
   using node::node;
 
   void take(id from, bool signal) override {
     if (!signal) {
-      status = !status;
-      send(status);
+      unsigned long mask = 1UL << ident().v;
+      gff ^= mask;
+      send((gff & mask) != 0);
     }
-  }
-
-  void dump() override {
-    silog::log(silog::debug, "%%%.*s = %s", (int)ident().s.size(),
-               ident().s.data(), status ? "on" : "off");
   }
 };
 class comb : public node {
-  bool mem[max_id]{};
+  unsigned long mem{};
 
 public:
   using node::node;
 
+  void add_input(id i) override {
+    node::add_input(i);
+    mem |= 1 << i.v;
+  }
+
   void take(id from, bool signal) override {
-    mem[from.v] = signal;
-    for (auto id : inputs()) {
-      if (!mem[id.v]) {
-        send(true);
-        return;
-      }
+    unsigned long mask = 1UL << from.v;
+    if (signal) {
+      mem &= ~mask;
+    } else {
+      mem |= mask;
     }
-    send(false);
+    send(mem != 0);
   }
 };
 class bcast : public node {
