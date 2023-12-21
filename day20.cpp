@@ -167,8 +167,9 @@ int main(int argc, char **argv) {
 
   long hp{};
   long lp{};
+  long lcm{1};
 
-  const auto max_reps = 100000;
+  const auto max_reps = 10000;
   for (auto rep = 0; rep < max_reps; rep++) {
     if (rep % 1000000 == 0)
       info("running", rep);
@@ -185,8 +186,10 @@ int main(int argc, char **argv) {
       auto [from, to, v] = signals[i];
 
       if (rxi && to.v == rxi->ident().v && v) {
-        silog::log(silog::info, "%.*s %d %d", (int)from.s.size(), from.s.data(),
-                   v, rep);
+        auto nn = rep + 1;
+        lcm = lcm * nn / gcd(lcm, nn);
+        silog::log(silog::info, "%.*s %d %d %ld", (int)from.s.size(),
+                   from.s.data(), v, rep, lcm);
       }
       /*
       silog::log(silog::debug, "%.*s -%s-> %.*s", (int)from.s.size(),

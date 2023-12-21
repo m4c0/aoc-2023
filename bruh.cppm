@@ -264,6 +264,18 @@ export constexpr auto step(cardinal c) {
   return vals[c];
 }
 
+export constexpr long gcd(long a, long b) {
+  if (b == 0)
+    return a;
+  return (a > b) ? gcd(b, a % b) : gcd(a, b % a);
+}
+static_assert(gcd(54, 24) == 6);
+static_assert(gcd(48, 18) == 6);
+static_assert(gcd(15, 25) == 5);
+static_assert(gcd(3, 2) == 1);
+static_assert(gcd(3, 0) == 3);
+static_assert(gcd(1, 1) == 1l);
+
 export void info(const char *label, int val) {
   silog::log(silog::info, "%s: %d", label, val);
 }
