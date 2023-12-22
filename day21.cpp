@@ -32,27 +32,38 @@ class solver {
 public:
   explicit solver(const data_map &m) : map{m} {}
 
-  void grub(point p, int steps) {
-    // if (dpe[p.y][p.x] >= steps) {
-    if (dp[p.y][p.x][steps] != 0) {
-      return;
-    }
-    if (!map.inside(p))
-      return;
+  void grub(point s, int max_steps) {
+    struct mark {
+      point p;
+      int steps;
+    };
+    hai::varray<mark> queue{1024000};
+    queue.push_back(mark{s, max_steps});
 
-    if (map.at(p) == '#')
-      return;
+    for (auto i = 0; i < queue.size(); i++) {
+      auto [p, steps] = queue[i];
 
-    parity[p.y][p.x] = steps % 2 == 0 ? EVEN : ODD;
+      // if (dpe[p.y][p.x] >= steps) {
+      if (dp[p.y][p.x][steps] != 0) {
+        continue;
+      }
+      if (!map.inside(p))
+        continue;
 
-    if (steps == 0) {
-      return;
-    }
+      if (map.at(p) == '#')
+        continue;
 
-    mx(dpe[p.y][p.x], steps);
-    dp[p.y][p.x][steps] = 1;
-    for (auto c : cardinals) {
-      grub(p + step(c), steps - 1);
+      parity[p.y][p.x] = steps % 2 == 0 ? EVEN : ODD;
+
+      if (steps == 0) {
+        continue;
+      }
+
+      mx(dpe[p.y][p.x], steps);
+      dp[p.y][p.x][steps] = 1;
+      for (auto c : cardinals) {
+        queue.push_back(mark{p + step(c), steps - 1});
+      }
     }
   }
 
