@@ -17,16 +17,37 @@ void print(int v) {
   }
 }
 
-class solver {
-  static constexpr const auto fold = 10;
-  static constexpr const auto half_fold = fold / 2;
-  int dp[fold * 150][fold * 150]{};
-  const data_map &map;
+class fold_t {
+  int data[150][150]{};
 
 public:
-  explicit solver(const data_map &m) : map{m} {}
+  constexpr auto &operator[](auto idx) noexcept { return data[idx]; }
 
-  void grub(point s, int max_steps) {
+  constexpr auto result() const {
+    int r{};
+    for (auto &row : data) {
+      for (auto d : row) {
+        d--;
+        if (d >= 0 && (d % 2) == 0) {
+          r++;
+        }
+      }
+    }
+    return r;
+  }
+};
+
+class solver {
+  static constexpr const auto fold = 20;
+  static constexpr const auto half_fold = fold / 2;
+  fold_t dp[fold][fold]{};
+  const data_map &map;
+  const point s;
+
+public:
+  explicit solver(const data_map &m, point s) : map{m}, s{s} {}
+
+  void grub(int max_steps) {
     const point cp{half_fold * map.cols, half_fold * map.rows};
     struct mark {
       point p;
@@ -37,15 +58,19 @@ public:
 
     for (auto i = 0; i < queue.size(); i++) {
       auto [p, steps] = queue[i];
+      point fp{p.x / map.cols, p.y / map.rows};
+      if (fp.x < 0 || fp.y < 0 || fp.x >= fold || fp.y >= fold)
+        continue;
 
       point mp{p.x % map.cols, p.y % map.rows};
-      if (dp[p.y][p.x] >= steps + 1) {
+      auto &dpp = dp[fp.y][fp.x][mp.y][mp.x];
+      if (dpp >= steps + 1) {
         continue;
       }
       if (map.at(mp) == '#')
         continue;
 
-      mx(dp[p.y][p.x], steps + 1);
+      mx(dpp, steps + 1);
 
       if (steps == 0) {
         continue;
@@ -58,29 +83,28 @@ public:
   }
 
   auto result() const {
-    for (auto y = 0; y < map.rows * fold; y++) {
-      if (y % map.rows == 0)
-        fprintf(stderr, "\n");
-      for (auto x = 0; x < map.cols * fold; x++) {
-        if (x % map.cols == 0)
-          fprintf(stderr, " ");
-        print(dp[y][x]);
+    point cp{half_fold, half_fold};
+    long res{};
+    point p{};
+    for (p.y = 0; p.y < fold; p.y++) {
+      for (p.x = 0; p.x < fold; p.x++) {
+        auto r = dp[p.y][p.x].result();
+        auto c = p == cp ? 36 : 37;
+        fprintf(stderr, "\e[%dm%5d\e[0m ", c, r);
+        res += r;
       }
       fprintf(stderr, "\n");
     }
-
-    int r{};
-    for (auto &row : dp) {
-      for (auto d : row) {
-        d--;
-        if (d >= 0 && (d % 2) == 0) {
-          r++;
-        }
-      }
-    }
-    return r;
+    return res;
   }
 };
+
+auto run(const auto &map, point s, int steps) {
+  auto slv = hai::uptr<solver>::make(map, s);
+  slv->grub(steps);
+  info("res", slv->result());
+  return slv;
+}
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
@@ -95,15 +119,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  const auto steps = argc == 1 ? 6 : 64;
+  // part 1
+  const auto p1s = argc == 1 ? 6 : 64;
+  run(map, s, p1s);
 
-  auto slv = hai::uptr<solver>::make(map);
-  slv->grub(s, steps);
-  info("res", slv->result());
+  // part 2
+  const auto p2s = argc == 1 ? 5000 : 26501365;
+  const auto par = p2s % 2;
+  run(map, s, p2s);
+  auto slv = run(map, s, (p2s % map.rows) + map.rows * (4 + par));
 
-  {
-    auto slv = hai::uptr<solver>::make(map);
-    slv->grub(s, 44);
-    info("res", slv->result());
-  }
+  info("done", 0);
 }
