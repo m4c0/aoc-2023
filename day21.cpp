@@ -87,8 +87,8 @@ public:
 
   auto part0() {
     long res{};
-    for (auto a = 1; a <= 2; a++) {
-      for (auto b = 3; b <= 5; b++) {
+    for (auto a = 0; a <= 3; a++) {
+      for (auto b = 2; b <= 3; b++) {
         auto q0 = dp[half_fold - a][half_fold - b].result();
         auto q1 = dp[half_fold - b][half_fold + a].result();
         auto q2 = dp[half_fold + a][half_fold + b].result();
@@ -105,6 +105,16 @@ public:
   auto part2() {
     return dp[half_fold][half_fold].result() +
            dp[half_fold][half_fold - 1].result();
+  }
+  auto part3() {
+    return dp[half_fold + 1][half_fold - 3].result() +
+           dp[half_fold + 1][half_fold - 2].result() +
+           dp[half_fold - 1][half_fold + 3].result() +
+           dp[half_fold - 1][half_fold + 2].result() +
+           dp[half_fold - 3][half_fold - 1].result() +
+           dp[half_fold - 2][half_fold - 1].result() +
+           dp[half_fold + 3][half_fold + 1].result() +
+           dp[half_fold + 2][half_fold + 1].result();
   }
   auto centre() { return dp[half_fold][half_fold].result(); }
   auto sides() {
@@ -164,7 +174,7 @@ int main(int argc, char **argv) {
   run(map, s, p1s);
 
   // part 2
-  const long p2s = argc == 1 ? 141 : 1113; // 26501365;
+  const long p2s = argc == 1 ? 141 : 26501365;
   const auto reps = p2s / map.rows;
   const auto rems = p2s % map.rows;
 
@@ -185,14 +195,14 @@ int main(int argc, char **argv) {
   info("part0", slv->part0());
   info("part1", slv->part1());
   info("part2", slv->part2());
-  info("part2 n", p01 + 1);
   info("centre", slv->centre());
   info("sides", slv->sides());
 
   long part0 = slv->part0() * p01;
-  long part1 = 4 * slv->part1() * p01 * (p01 + 1) / 2;
-  long part2 = 4 * slv->part2() * (p01 + 1);
+  long part1 = 4 * slv->part1() * p01 * (p01 - 1) / 2;
+  long part2 = 4 * slv->part2() * p01;
+  long part3 = slv->part3();
 
-  long done{part0 + part1 + part2 + slv->centre() + slv->sides()};
+  long done{part0 + part1 + part2 + part3 + slv->centre() + slv->sides()};
   info("done", done);
 }
