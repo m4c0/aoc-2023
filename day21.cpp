@@ -18,30 +18,31 @@ void print(int v) {
 }
 
 class solver {
-  int dp[150][150]{};
+  static constexpr const auto fold = 10;
+  static constexpr const auto half_fold = fold / 2;
+  int dp[fold * 150][fold * 150]{};
   const data_map &map;
 
 public:
   explicit solver(const data_map &m) : map{m} {}
 
   void grub(point s, int max_steps) {
+    const point cp{half_fold * map.cols, half_fold * map.rows};
     struct mark {
       point p;
       int steps;
     };
     hai::varray<mark> queue{1024000};
-    queue.push_back(mark{s, max_steps});
+    queue.push_back(mark{s + cp, max_steps});
 
     for (auto i = 0; i < queue.size(); i++) {
       auto [p, steps] = queue[i];
 
-      if (!map.inside(p))
-        continue;
-
+      point mp{p.x % map.cols, p.y % map.rows};
       if (dp[p.y][p.x] >= steps + 1) {
         continue;
       }
-      if (map.at(p) == '#')
+      if (map.at(mp) == '#')
         continue;
 
       mx(dp[p.y][p.x], steps + 1);
@@ -57,16 +58,21 @@ public:
   }
 
   auto result() const {
-    int r{};
-    for (auto y = 0; y < map.rows; y++) {
-      for (auto x = 0; x < map.cols; x++) {
-        auto d = dp[y][x] - 1;
+    for (auto y = 0; y < map.rows * fold; y++) {
+      for (auto x = 0; x < map.cols * fold; x++) {
         print(dp[y][x]);
+      }
+      fprintf(stderr, "\n");
+    }
+
+    int r{};
+    for (auto &row : dp) {
+      for (auto d : row) {
+        d--;
         if (d >= 0 && (d % 2) == 0) {
           r++;
         }
       }
-      fprintf(stderr, "\n");
     }
     return r;
   }
@@ -86,8 +92,14 @@ int main(int argc, char **argv) {
   }
 
   const auto steps = argc == 1 ? 6 : 64;
-  solver slv{map};
-  slv.grub(s, steps);
 
-  info("res", slv.result());
+  auto slv = hai::uptr<solver>::make(map);
+  slv->grub(s, steps);
+  info("res", slv->result());
+
+  {
+    auto slv = hai::uptr<solver>::make(map);
+    slv->grub(s, 10);
+    info("res", slv->result());
+  }
 }
