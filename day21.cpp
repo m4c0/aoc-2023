@@ -7,57 +7,59 @@ import silog;
 
 #include <stdio.h>
 
-void print(int v) {
-  if (v == 0) {
-    fprintf(stderr, ".");
-  } else if (v % 2 == 0) {
-    fprintf(stderr, "O");
-  } else {
-    fprintf(stderr, "E");
-  }
-}
-
 class fold_t {
-  int data[150][150]{};
+  long data[150][150]{};
+  long res{-1};
 
 public:
   constexpr auto &operator[](auto idx) noexcept { return data[idx]; }
 
-  constexpr auto result() const {
-    int r{};
+  constexpr auto result() const { return res; }
+  constexpr auto result(int par) {
+    if (res >= 0)
+      return res;
+
+    res = 0;
     for (auto &row : data) {
       for (auto d : row) {
         d--;
-        if (d >= 0 && (d % 2) == 0) {
-          r++;
+        if (d >= 0 && (d % 2) == par) {
+          res++;
         }
       }
     }
-    return r;
+    return res;
   }
 };
 
 class solver {
-  static constexpr const auto fold = 20;
+  static constexpr const auto fold = 31;
   static constexpr const auto half_fold = fold / 2;
   fold_t dp[fold][fold]{};
+  const long max_steps;
   const data_map &map;
   const point s;
+  long res{};
 
 public:
-  explicit solver(const data_map &m, point s) : map{m}, s{s} {}
+  explicit solver(const data_map &m, point s, long ms)
+      : max_steps{ms}, map{m}, s{s} {}
 
-  void grub(int max_steps) {
+  void grub() {
     const point cp{half_fold * map.cols, half_fold * map.rows};
     struct mark {
       point p;
-      int steps;
+      long steps;
     };
-    hai::varray<mark> queue{1024000};
-    queue.push_back(mark{s + cp, max_steps});
+    unsigned qsize = 1024000;
+    hai::array<mark> queue{qsize};
+    int wr{};
+    int rd{};
+    queue[wr++] = mark{s + cp, max_steps};
 
-    for (auto i = 0; i < queue.size(); i++) {
-      auto [p, steps] = queue[i];
+    while (rd != wr) {
+      auto [p, steps] = queue[rd];
+      rd = (rd + 1) % qsize;
       point fp{p.x / map.cols, p.y / map.rows};
       if (fp.x < 0 || fp.y < 0 || fp.x >= fold || fp.y >= fold)
         continue;
@@ -77,20 +79,45 @@ public:
       }
 
       for (auto c : cardinals) {
-        queue.push_back(mark{p + step(c), steps - 1});
+        queue[wr] = mark{p + step(c), steps - 1};
+        wr = (wr + 1) % qsize;
       }
     }
   }
 
-  auto result() const {
-    point cp{half_fold, half_fold};
+  auto part0() {
     long res{};
+    for (auto a = 1; a <= 2; a++) {
+      for (auto b = 3; b <= 5; b++) {
+        auto q0 = dp[half_fold - a][half_fold - b].result();
+        auto q1 = dp[half_fold - b][half_fold + a].result();
+        auto q2 = dp[half_fold + a][half_fold + b].result();
+        auto q3 = dp[half_fold + b][half_fold - a].result();
+        res += q0 + q1 + q2 + q3;
+      }
+    }
+    return res;
+  }
+  auto part1() {
+    return dp[half_fold][half_fold].result() * 2 +
+           dp[half_fold][half_fold - 1].result() * 3;
+  }
+  auto part2() {
+    return dp[half_fold][half_fold].result() * 2 +
+           dp[half_fold][half_fold - 1].result() * 2;
+  }
+
+  auto result() {
+    if (res != 0)
+      return res;
+
+    point cp{half_fold, half_fold};
     point p{};
     for (p.y = 0; p.y < fold; p.y++) {
       for (p.x = 0; p.x < fold; p.x++) {
-        auto r = dp[p.y][p.x].result();
-        auto c = p == cp ? 36 : 37;
-        fprintf(stderr, "\e[%dm%5d\e[0m ", c, r);
+        auto r = dp[p.y][p.x].result(max_steps % 1);
+        auto c = r == 0 ? 30 : (p == cp ? 36 : 37);
+        fprintf(stderr, "\e[%dm%5ld\e[0m ", c, r);
         res += r;
       }
       fprintf(stderr, "\n");
@@ -99,10 +126,10 @@ public:
   }
 };
 
-auto run(const auto &map, point s, int steps) {
-  auto slv = hai::uptr<solver>::make(map, s);
-  slv->grub(steps);
-  info("res", slv->result());
+auto run(const auto &map, point s, long steps) {
+  auto slv = hai::uptr<solver>::make(map, s, steps);
+  slv->grub();
+  silog::log(silog::info, "steps: %ld -- res: %ld", steps, slv->result());
   return slv;
 }
 
@@ -120,14 +147,34 @@ int main(int argc, char **argv) {
   }
 
   // part 1
-  const auto p1s = argc == 1 ? 6 : 64;
+  const long p1s = argc == 1 ? 6 : 64;
   run(map, s, p1s);
 
   // part 2
-  const auto p2s = argc == 1 ? 5000 : 26501365;
-  const auto par = p2s % 2;
-  run(map, s, p2s);
-  auto slv = run(map, s, (p2s % map.rows) + map.rows * (4 + par));
+  const long p2s = argc == 1 ? 141 : 26501365;
+  const auto reps = p2s / map.rows;
+  const auto rems = p2s % map.rows;
 
-  info("done", 0);
+  if (argc == 1) {
+    run(map, s, p2s);
+    run(map, s, rems + map.rows * (7 - p2s % 2));
+  }
+
+  auto calc = rems + map.rows * 4;
+  auto slv = run(map, s, calc);
+
+  info("reps", reps);
+  info("rems", rems);
+  info("part0", slv->part0());
+  info("part1", slv->part1());
+  info("part2", slv->part2());
+
+  long p01 = (reps - 1) / 2;
+  long part0 = slv->part0() * p01;
+
+  long part1 = 4 * slv->part1() * p01;
+  long part2 = 4 * slv->part2() * p01 * (p01 - 1) / 2;
+
+  long done{slv->result() + part0 + part1 + part2};
+  info("done", done);
 }
