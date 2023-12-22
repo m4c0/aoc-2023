@@ -59,7 +59,11 @@ public:
 
   auto result() const {
     for (auto y = 0; y < map.rows * fold; y++) {
+      if (y % map.rows == 0)
+        fprintf(stderr, "\n");
       for (auto x = 0; x < map.cols * fold; x++) {
+        if (x % map.cols == 0)
+          fprintf(stderr, " ");
         print(dp[y][x]);
       }
       fprintf(stderr, "\n");
@@ -99,7 +103,7 @@ int main(int argc, char **argv) {
 
   {
     auto slv = hai::uptr<solver>::make(map);
-    slv->grub(s, 10);
+    slv->grub(s, 44);
     info("res", slv->result());
   }
 }
