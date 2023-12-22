@@ -7,26 +7,18 @@ import silog;
 
 #include <stdio.h>
 
-enum par_t { NONE, EVEN, ODD };
-
-void print(par_t v) {
-  switch (v) {
-  case NONE:
+void print(int v) {
+  if (v == 0) {
     fprintf(stderr, ".");
-    break;
-  case EVEN:
-    fprintf(stderr, "E");
-    break;
-  case ODD:
+  } else if (v % 2 == 0) {
     fprintf(stderr, "O");
-    break;
+  } else {
+    fprintf(stderr, "E");
   }
 }
 
 class solver {
-  int dpe[150][150]{};
-  int dp[150][150][64]{};
-  par_t parity[150][150]{};
+  int dp[150][150]{};
   const data_map &map;
 
 public:
@@ -43,24 +35,21 @@ public:
     for (auto i = 0; i < queue.size(); i++) {
       auto [p, steps] = queue[i];
 
-      // if (dpe[p.y][p.x] >= steps) {
-      if (dp[p.y][p.x][steps] != 0) {
-        continue;
-      }
       if (!map.inside(p))
         continue;
 
+      if (dp[p.y][p.x] >= steps + 1) {
+        continue;
+      }
       if (map.at(p) == '#')
         continue;
 
-      parity[p.y][p.x] = steps % 2 == 0 ? EVEN : ODD;
+      mx(dp[p.y][p.x], steps + 1);
 
       if (steps == 0) {
         continue;
       }
 
-      mx(dpe[p.y][p.x], steps);
-      dp[p.y][p.x][steps] = 1;
       for (auto c : cardinals) {
         queue.push_back(mark{p + step(c), steps - 1});
       }
@@ -71,10 +60,11 @@ public:
     int r{};
     for (auto y = 0; y < map.rows; y++) {
       for (auto x = 0; x < map.cols; x++) {
-        auto b = parity[y][x];
-        print(b);
-        if (b == EVEN)
+        auto d = dp[y][x] - 1;
+        print(dp[y][x]);
+        if (d >= 0 && (d % 2) == 0) {
           r++;
+        }
       }
       fprintf(stderr, "\n");
     }
