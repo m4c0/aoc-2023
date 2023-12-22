@@ -5,27 +5,46 @@ import jute;
 import scanf;
 import silog;
 
-int dp[150][150][64]{};
-void grub(auto &res, const auto &map, point p, int steps) {
-  if (dp[p.y][p.x][steps] > 0) {
-    return;
-  }
-  if (!map.inside(p))
-    return;
+class solver {
+  bool res[150][150]{};
+  int dp[150][150][64]{};
+  const data_map &map;
 
-  if (map.at(p) == '#')
-    return;
+public:
+  explicit solver(const data_map &m) : map{m} {}
 
-  if (steps == 0) {
-    res[map.index(p)] = true;
-    return;
+  void grub(point p, int steps) {
+    if (dp[p.y][p.x][steps] > 0) {
+      return;
+    }
+    if (!map.inside(p))
+      return;
+
+    if (map.at(p) == '#')
+      return;
+
+    if (steps == 0) {
+      res[p.y][p.x] = true;
+      return;
+    }
+
+    dp[p.y][p.x][steps] = 1;
+    for (auto c : cardinals) {
+      grub(p + step(c), steps - 1);
+    }
   }
 
-  dp[p.y][p.x][steps] = 1;
-  for (auto c : cardinals) {
-    grub(res, map, p + step(c), steps - 1);
+  auto result() const {
+    int r{};
+    for (auto &row : res) {
+      for (auto b : row) {
+        if (b)
+          r++;
+      }
+    }
+    return r;
   }
-}
+};
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
@@ -40,15 +59,9 @@ int main(int argc, char **argv) {
     }
   }
 
-  hai::array<bool> r{(unsigned)dt.raw().size()};
-
   const auto steps = argc == 1 ? 6 : 64;
-  grub(r, map, s, steps);
+  solver slv{map};
+  slv.grub(s, steps);
 
-  int res{};
-  for (auto b : r) {
-    if (b)
-      res++;
-  }
-  info("res", res);
+  info("res", slv.result());
 }
