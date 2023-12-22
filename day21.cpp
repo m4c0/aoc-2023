@@ -5,9 +5,10 @@ import jute;
 import scanf;
 import silog;
 
+enum par_t { NONE, EVEN, ODD };
 class solver {
-  bool res[150][150]{};
   int dp[150][150][64]{};
+  par_t parity[150][150]{};
   const data_map &map;
 
 public:
@@ -23,8 +24,9 @@ public:
     if (map.at(p) == '#')
       return;
 
+    parity[p.y][p.x] = steps % 2 == 0 ? EVEN : ODD;
+
     if (steps == 0) {
-      res[p.y][p.x] = true;
       return;
     }
 
@@ -36,9 +38,9 @@ public:
 
   auto result() const {
     int r{};
-    for (auto &row : res) {
+    for (auto &row : parity) {
       for (auto b : row) {
-        if (b)
+        if (b == EVEN)
           r++;
       }
     }
