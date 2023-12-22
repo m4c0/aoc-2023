@@ -100,11 +100,23 @@ public:
   }
   auto part1() {
     return dp[half_fold][half_fold].result() * 2 +
-           dp[half_fold][half_fold - 1].result() * 3;
+           dp[half_fold][half_fold - 1].result() * 2;
   }
   auto part2() {
-    return dp[half_fold][half_fold].result() * 2 +
-           dp[half_fold][half_fold - 1].result() * 2;
+    return dp[half_fold][half_fold].result() +
+           dp[half_fold][half_fold - 1].result();
+  }
+  auto centre() { return dp[half_fold][half_fold].result(); }
+  auto sides() {
+    long res{};
+    for (auto i = -1; i <= 1; i++) {
+      auto q0 = dp[half_fold - 4][half_fold + i].result();
+      auto q1 = dp[half_fold + 4][half_fold + i].result();
+      auto q2 = dp[half_fold + i][half_fold - 4].result();
+      auto q3 = dp[half_fold + i][half_fold + 4].result();
+      res += q0 + q1 + q2 + q3;
+    }
+    return res;
   }
 
   auto result() {
@@ -129,7 +141,8 @@ public:
 auto run(const auto &map, point s, long steps) {
   auto slv = hai::uptr<solver>::make(map, s, steps);
   slv->grub();
-  silog::log(silog::info, "steps: %ld -- res: %ld", steps, slv->result());
+  silog::log(silog::info, "steps: %ld -- res: %ld -- parts: %ld", steps,
+             slv->result(), steps / map.rows);
   return slv;
 }
 
@@ -151,30 +164,35 @@ int main(int argc, char **argv) {
   run(map, s, p1s);
 
   // part 2
-  const long p2s = argc == 1 ? 141 : 26501365;
+  const long p2s = argc == 1 ? 141 : 1113; // 26501365;
   const auto reps = p2s / map.rows;
   const auto rems = p2s % map.rows;
 
   if (argc == 1) {
     run(map, s, p2s);
     run(map, s, rems + map.rows * (7 - p2s % 2));
+  } else {
+    run(map, s, rems + map.rows * 12);
   }
 
   auto calc = rems + map.rows * 4;
   auto slv = run(map, s, calc);
+
+  long p01 = (reps - 1) / 2;
 
   info("reps", reps);
   info("rems", rems);
   info("part0", slv->part0());
   info("part1", slv->part1());
   info("part2", slv->part2());
+  info("part2 n", p01 + 1);
+  info("centre", slv->centre());
+  info("sides", slv->sides());
 
-  long p01 = (reps - 1) / 2;
   long part0 = slv->part0() * p01;
+  long part1 = 4 * slv->part1() * p01 * (p01 + 1) / 2;
+  long part2 = 4 * slv->part2() * (p01 + 1);
 
-  long part1 = 4 * slv->part1() * p01;
-  long part2 = 4 * slv->part2() * p01 * (p01 - 1) / 2;
-
-  long done{slv->result() + part0 + part1 + part2};
+  long done{part0 + part1 + part2 + slv->centre() + slv->sides()};
   info("done", done);
 }
