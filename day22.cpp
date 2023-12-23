@@ -59,6 +59,7 @@ public:
 } // namespace ll
 
 struct block {
+  int n{};
   int x0;
   int y0;
   int z0;
@@ -66,27 +67,69 @@ struct block {
   int y1;
   int z1;
 };
+constexpr block fall1(block b) {
+  if (b.z0 > 1) {
+    b.z0--;
+    b.z1--;
+  }
+  return b;
+}
+constexpr bool hits(const block &a, const block &b) {
+  if (a.x0 > b.x1)
+    return false;
+  if (a.x1 < b.x0)
+    return false;
+  if (a.y0 > b.y1)
+    return false;
+  if (a.y1 < b.y0)
+    return false;
+  if (a.z0 > b.z1)
+    return false;
+  if (a.z1 < b.z0)
+    return false;
+  return true;
+}
 
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
   ll::list<block> blocks{};
+  int n{};
   for (auto line : dt) {
-    block b{};
+    block b{.n = ++n};
     if (!scan::f(line, "\v,\v,\v~\v,\v,\v", b.x0, b.y0, b.z0, b.x1, b.y1, b.z1))
+      throw 0;
+
+    if (b.x0 > b.x1 || b.y0 > b.y1 || b.z0 > b.z1)
       throw 0;
 
     blocks.push_back(b);
   }
-  for (auto a = blocks.begin(); a != blocks.end(); ++a) {
-    for (auto b = a + 1; b != blocks.end(); ++b) {
-      if (a->z0 > b->z0) {
-        block tmp = *a;
-        *a = *b;
-        *b = tmp;
+
+  bool changed{};
+  do {
+    changed = false;
+    for (auto a = blocks.begin(); a != blocks.end(); ++a) {
+      if (a->z0 == 1)
+        continue;
+
+      auto a1 = fall1(*a);
+      bool hit{};
+      for (auto b = blocks.begin(); b != blocks.end(); ++b) {
+        if (a != b && hits(a1, *b)) {
+          // silog::log(silog::info, "hit: %d(%d)-%d(%d)", a1.n, a1.z0, b->n,
+          // b->z0);
+          hit = true;
+        }
+      }
+      if (!hit) {
+        // info("fall", a1.n);
+        changed = true;
+        *a = a1;
       }
     }
-  }
+  } while (changed);
+
   for (auto &b : blocks) {
     silog::log(silog::info, "%d %d %d - %d %d %d", b.x0, b.y0, b.z0, b.x1, b.y1,
                b.z1);
