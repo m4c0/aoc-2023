@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
     }
 
     hai::array<bool> blown{blocks.size() + 1};
-    hai::varray<int> queue{blocks.size() + 1};
+    hai::varray<int> queue{10000000};
     queue.push_back(b.n);
     blown[b.n] = true;
     for (auto i = 0; i < queue.size(); i++) {
