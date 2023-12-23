@@ -113,10 +113,12 @@ void dump(const auto &blocks) {
   }
 }
 const char *str(int n) {
-  static char buf[10]{};
+  if (n == 0)
+    return "nil";
+  char *buf = new char[10]{};
   char *res = buf;
   while (n > 0) {
-    *res++ = (n % 26) + 'A' - 1;
+    *res++ = ((n - 1) % 26) + 'A';
     n /= 26;
   }
   *res = 0;
@@ -131,6 +133,25 @@ void dump_g(const auto &graph) {
     fprintf(stderr, "\n");
   }
   fprintf(stderr, "\n");
+}
+
+bool contains_all(const auto &blown, const auto &ids) {
+  for (auto s : ids) {
+    if (!blown[s]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+auto bls(const auto &blown) {
+  jute::heap res{};
+  for (auto i = 0; i < blown.size(); i++) {
+    if (blown[i]) {
+      res = res + jute::view::unsafe(str(i));
+    }
+  }
+  return res;
 }
 
 int main(int argc, char **argv) {
@@ -209,6 +230,7 @@ int main(int argc, char **argv) {
   dump_g(is_sup_by);
 
   long part1{blocks.size()};
+  long part2{};
   for (auto &b : blocks) {
     for (auto s : sups[b.n]) {
       if (is_sup_by[s].size() == 1) {
@@ -216,6 +238,30 @@ int main(int argc, char **argv) {
         break;
       }
     }
+
+    hai::array<bool> blown{blocks.size() + 1};
+    hai::varray<int> queue{blocks.size() + 1};
+    queue.push_back(b.n);
+    blown[b.n] = true;
+    for (auto i = 0; i < queue.size(); i++) {
+      for (auto s : sups[queue[i]]) {
+        if (contains_all(blown, is_sup_by[s])) {
+          blown[s] = true;
+          queue.push_back(s);
+        } else {
+          silog::log(silog::info, "---> %s <> %s -- %s", str(b.n), str(s),
+                     (*bls(blown)).data());
+        }
+      }
+    }
+    info("this", jute::view::unsafe(str(b.n)));
+    for (auto i = 0; i < blown.size(); i++) {
+      if (i != b.n && blown[i]) {
+        info("    blew", jute::view::unsafe(str(i)));
+        part2++;
+      }
+    }
   }
   info("part 1", part1);
+  info("part 2", part2);
 }
