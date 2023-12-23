@@ -148,7 +148,7 @@ auto bls(const auto &blown) {
   jute::heap res{};
   for (auto i = 0; i < blown.size(); i++) {
     if (blown[i]) {
-      res = res + jute::view::unsafe(str(i));
+      res = res + jute::view::unsafe(str(i)) + " ";
     }
   }
   return res;
@@ -226,8 +226,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  dump_g(sups);
-  dump_g(is_sup_by);
+  // dump_g(sups);
+  // dump_g(is_sup_by);
 
   long part1{blocks.size()};
   long part2{};
@@ -249,15 +249,18 @@ int main(int argc, char **argv) {
           blown[s] = true;
           queue.push_back(s);
         } else {
-          silog::log(silog::info, "---> %s <> %s -- %s", str(b.n), str(s),
-                     (*bls(blown)).data());
+          // silog::log(silog::info, "---> %s <> %s -- %s", str(b.n), str(s),
+          //            (*bls(blown)).data());
+          // for (auto nn : is_sup_by[s]) {
+          //   silog::log(silog::info, "  s: %s", str(nn));
+          // }
         }
       }
     }
-    info("this", jute::view::unsafe(str(b.n)));
+    // info("this", jute::view::unsafe(str(b.n)));
     for (auto i = 0; i < blown.size(); i++) {
       if (i != b.n && blown[i]) {
-        info("    blew", jute::view::unsafe(str(i)));
+        // info("    blew", jute::view::unsafe(str(i)));
         part2++;
       }
     }
