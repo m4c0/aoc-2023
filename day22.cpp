@@ -90,11 +90,19 @@ constexpr bool hits(const block &a, const block &b) {
   return true;
 }
 
+void dump(const auto &blocks) {
+  for (auto &b : blocks) {
+    silog::log(silog::info, "%d %d %d - %d %d %d", b.x0, b.y0, b.z0, b.x1, b.y1,
+               b.z1);
+  }
+}
+
 int main(int argc, char **argv) {
   auto dt = data::of(argc);
 
-  ll::list<block> blocks{};
+  hai::varray<block> blocks{10240};
   int n{};
+  int max_dz{};
   for (auto line : dt) {
     block b{.n = ++n};
     if (!scan::f(line, "\v,\v,\v~\v,\v,\v", b.x0, b.y0, b.z0, b.x1, b.y1, b.z1))
@@ -103,7 +111,20 @@ int main(int argc, char **argv) {
     if (b.x0 > b.x1 || b.y0 > b.y1 || b.z0 > b.z1)
       throw 0;
 
+    mx(max_dz, b.z1 - b.z0);
+
     blocks.push_back(b);
+  }
+  info("max dz", max_dz);
+
+  for (auto a = blocks.begin(); a != blocks.end(); ++a) {
+    for (auto b = a + 1; b != blocks.end(); ++b) {
+      if (a->z0 > b->z0) {
+        block tmp = *a;
+        *a = *b;
+        *b = tmp;
+      }
+    }
   }
 
   bool changed{};
@@ -120,6 +141,7 @@ int main(int argc, char **argv) {
           // silog::log(silog::info, "hit: %d(%d)-%d(%d)", a1.n, a1.z0, b->n,
           // b->z0);
           hit = true;
+          break;
         }
       }
       if (!hit) {
@@ -130,10 +152,33 @@ int main(int argc, char **argv) {
     }
   } while (changed);
 
-  for (auto &b : blocks) {
-    silog::log(silog::info, "%d %d %d - %d %d %d", b.x0, b.y0, b.z0, b.x1, b.y1,
-               b.z1);
+  // dump(blocks);
+
+  int safe_count{};
+  for (auto blasted = blocks.begin(); blasted != blocks.end(); ++blasted) {
+    bool safe{true};
+    for (auto a = blocks.begin(); a != blocks.end(); ++a) {
+      if (a == blasted)
+        continue;
+      if (a->z0 == 1)
+        continue;
+
+      auto a1 = fall1(*a);
+      bool hit{};
+      for (auto b = blocks.begin(); b != blocks.end(); ++b) {
+        if (blasted != b && a != b && hits(a1, *b)) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) {
+        safe = false;
+        break;
+      }
+    }
+    if (safe)
+      safe_count++;
   }
 
-  info("done", 0);
+  info("done", safe_count);
 }
