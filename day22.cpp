@@ -27,9 +27,14 @@ template <typename Tp> class list {
         m_node = m_node->next;
       return *this;
     }
-    constexpr auto &operator*() noexcept {
-      static const Tp null{};
-      return m_node == nullptr ? null : m_node->value;
+    constexpr Tp &operator*() noexcept { return m_node->value; }
+    constexpr Tp *operator->() noexcept { return &m_node->value; }
+
+    constexpr it operator+(unsigned n) noexcept {
+      it res = *this;
+      for (auto i = 0; i < n; i++)
+        ++res;
+      return res;
     }
   };
 
@@ -73,10 +78,19 @@ int main(int argc, char **argv) {
 
     blocks.push_back(b);
   }
-
+  for (auto a = blocks.begin(); a != blocks.end(); ++a) {
+    for (auto b = a + 1; b != blocks.end(); ++b) {
+      if (a->z0 > b->z0) {
+        block tmp = *a;
+        *a = *b;
+        *b = tmp;
+      }
+    }
+  }
   for (auto &b : blocks) {
     silog::log(silog::info, "%d %d %d - %d %d %d", b.x0, b.y0, b.z0, b.x1, b.y1,
                b.z1);
   }
+
   info("done", 0);
 }
