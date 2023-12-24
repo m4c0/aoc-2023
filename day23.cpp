@@ -21,6 +21,19 @@ void dump(const char *msg, point a, point b, long sz) {
              b.x, sz);
 }
 
+void dump_map() {
+  for (point p{}; p.y < map.rows; p.y++) {
+    for (p.x = 0; p.x < map.cols; p.x++) {
+      auto pp = p + point{1, 1};
+      if (vis[pp.y][pp.x]) {
+        fprintf(stderr, "O");
+      } else
+        fprintf(stderr, "%c", map.at(p));
+    }
+    fprintf(stderr, "\n");
+  }
+}
+
 char can_walk(point p) {
   if (p.x < 1 || p.y < 1 || p.x > map.cols || p.y > map.rows)
     return false;
@@ -29,16 +42,13 @@ char can_walk(point p) {
 void link(point a, point b, long sz) {
   for (auto &n : paths[a.x][a.y]) {
     if (n.p == b) {
-      if (n.sz != sz) {
-        dump("dup", a, b, sz);
-        throw 0;
-      }
-      return;
+      dump("dup", a, b, sz);
+      throw 0;
     }
     if (n.sz == 0) {
       n.p = b;
       n.sz = sz;
-      dump("link", a, b, sz);
+      // dump("link", a, b, sz);
       return;
     }
   }
@@ -72,15 +82,16 @@ void trace(point from, point p, long sz) {
   for (auto c : cardinals) {
     trace(from, p + step(c), sz + 1);
   }
-  vis[p.y][p.x] = false;
+  // vis[p.y][p.x] = false;
 }
 
 long walk(point p) {
   long res{};
   for (auto &n : paths[p.x][p.y]) {
-    if (n.sz > 0) {
-      dump("linked", p, n.p, n.sz);
-    }
+    if (n.sz == 0)
+      continue;
+
+    mx(res, n.sz + walk(n.p));
   }
   return res;
 }
@@ -92,6 +103,7 @@ int main(int argc, char **argv) {
   const point s{2, 1};
   trace(s, s, 0);
 
-  long res{};
+  // dump_map();
+
   info("res", walk(s));
 }
