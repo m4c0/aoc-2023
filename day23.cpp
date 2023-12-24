@@ -7,33 +7,81 @@ import scanf;
 import silog;
 import traits;
 
+struct node {
+  point p{};
+  long sz{};
+};
 data_map map;
-bool vis[300][300]{};
+bool vis[150][150]{};
+node paths[150][150][4]{};
 
-long enter(point p, long sz) {
-  if (p.x < 0 || p.y < 0)
-    return 0;
+// Using 1-based + VIM-like coords
+void dump(const char *msg, point a, point b, long sz) {
+  silog::log(silog::info, "%s: %ld,%ld -> %ld,%ld = %ld", msg, a.y, a.x, b.y,
+             b.x, sz);
+}
+
+char can_walk(point p) {
+  if (p.x < 1 || p.y < 1 || p.x > map.cols || p.y > map.rows)
+    return false;
+  return map.at(p - point{1, 1}) != '#';
+}
+void link(point a, point b, long sz) {
+  for (auto &n : paths[a.x][a.y]) {
+    if (n.p == b) {
+      if (n.sz != sz) {
+        dump("dup", a, b, sz);
+        throw 0;
+      }
+      return;
+    }
+    if (n.sz == 0) {
+      n.p = b;
+      n.sz = sz;
+      dump("link", a, b, sz);
+      return;
+    }
+  }
+  dump("fail", a, b, sz);
+  throw 0;
+}
+
+void trace(point from, point p, long sz) {
+  if (!can_walk(p))
+    return;
   if (vis[p.y][p.x])
-    return 0;
-  if (map.at(p) == '#')
-    return 0;
-  if (p.y == map.rows - 1)
-    return sz;
+    return;
 
-  long res{};
+  if (p.y == map.rows) {
+    link(from, p, sz);
+    return;
+  }
 
   vis[p.y][p.x] = true;
+  long paths{};
   for (auto c : cardinals) {
-    auto np = p + step(c);
-    mx(res, enter(np, sz + 1));
-    // constexpr const char vs[]{'^', 'v', '<', '>'};
-    // auto np = p + step(c);
-    // auto mp = map.at(p);
-    // if (mp == '.' || mp == vs[c]) {
-    //   mx(res, enter(np, sz + 1));
-    // }
+    if (can_walk(p + step(c)))
+      paths++;
+  }
+  if (paths > 2) {
+    link(from, p, sz);
+    from = p;
+    sz = 0;
+  }
+
+  for (auto c : cardinals) {
+    trace(from, p + step(c), sz + 1);
   }
   vis[p.y][p.x] = false;
+}
+
+long walk(point p) {
+  long res{};
+  for (auto &n : paths[p.x][p.y]) {
+    if (n.sz > 0) {
+      dump("linked", p, n.p, n.sz);
+    }
+  }
   return res;
 }
 
@@ -41,7 +89,9 @@ int main(int argc, char **argv) {
   auto dt = data::of(argc);
   map = dt.map();
 
+  const point s{2, 1};
+  trace(s, s, 0);
+
   long res{};
-  res = enter(point{1, 0}, 0);
-  info("res", res);
+  info("res", walk(s));
 }
