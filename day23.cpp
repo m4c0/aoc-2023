@@ -20,10 +20,9 @@ long enter(point p, long sz) {
   if (p.y == map.rows - 1)
     return sz;
 
-  vis[p.y][p.x] = true;
-
   long res{};
 
+  vis[p.y][p.x] = true;
   for (auto c : cardinals) {
     constexpr const char vs[]{'^', 'v', '<', '>'};
     auto np = p + step(c);
@@ -32,6 +31,7 @@ long enter(point p, long sz) {
       mx(res, enter(np, sz + 1));
     }
   }
+  vis[p.y][p.x] = false;
   return res;
 }
 
