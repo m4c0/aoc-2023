@@ -277,6 +277,41 @@ static_assert(gcd(3, 2) == 1);
 static_assert(gcd(3, 0) == 3);
 static_assert(gcd(1, 1) == 1l);
 
+class q_underrun {};
+class q_overrun {};
+template <typename T> class queue {
+  hai::array<T> m_data{};
+  unsigned m_rd{};
+  unsigned m_wr{};
+
+  constexpr auto incr(unsigned n) const noexcept {
+    return (n + 1) % m_data.size();
+  }
+
+public:
+  constexpr queue() = default;
+  constexpr queue(unsigned sz) : m_data{sz} {}
+
+  constexpr bool empty() const noexcept { return m_rd == m_wr; }
+  constexpr bool full() const noexcept { return m_rd == incr(m_wr); }
+
+  constexpr void push(T t) {
+    if (full())
+      throw q_overrun{};
+
+    m_data[m_wr] = t;
+    m_wr = incr(m_wr);
+  }
+  [[nodiscard]] constexpr T pop() {
+    if (empty())
+      throw q_underrun{};
+
+    auto r = m_rd;
+    m_rd = incr(m_rd);
+    return m_data[r];
+  }
+};
+
 export void info(const char *label, int val) {
   silog::log(silog::info, "%s: %d", label, val);
 }
