@@ -24,12 +24,14 @@ long enter(point p, long sz) {
 
   vis[p.y][p.x] = true;
   for (auto c : cardinals) {
-    constexpr const char vs[]{'^', 'v', '<', '>'};
     auto np = p + step(c);
-    auto mp = map.at(p);
-    if (mp == '.' || mp == vs[c]) {
-      mx(res, enter(np, sz + 1));
-    }
+    mx(res, enter(np, sz + 1));
+    // constexpr const char vs[]{'^', 'v', '<', '>'};
+    // auto np = p + step(c);
+    // auto mp = map.at(p);
+    // if (mp == '.' || mp == vs[c]) {
+    //   mx(res, enter(np, sz + 1));
+    // }
   }
   vis[p.y][p.x] = false;
   return res;
