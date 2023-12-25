@@ -22,6 +22,24 @@ void dump(const char *msg, point a, point b, long sz) {
              b.x, sz);
 }
 
+bool dvis[150][150]{};
+void dump_graph(point s, int depth = 0) {
+  auto &dv = dvis[s.x][s.y];
+  if (dv) {
+    silog::log(silog::info, "%*sloop: %ld,%ld", depth, "", s.y, s.x);
+    return;
+  }
+
+  dv = true;
+  silog::log(silog::info, "%*s%ld,%ld", depth, "", s.y, s.x);
+  for (auto &n : paths[s.x][s.y]) {
+    if (n.sz > 0) {
+      dump_graph(n.p, depth + 2);
+    }
+  }
+  dv = false;
+}
+
 void dump_map() {
   for (point p{}; p.y < map.rows; p.y++) {
     for (p.x = 0; p.x < map.cols; p.x++) {
@@ -49,17 +67,17 @@ char can_walk(point p) {
     return false;
   return map.at(p - point{1, 1}) != '#';
 }
-void link(point a, point b, long sz) {
+bool link(point a, point b, long sz) {
   for (auto &n : paths[a.x][a.y]) {
     if (n.p == b) {
-      dump("dup", a, b, sz);
-      throw 0;
+      // dump("dup", a, b, sz);
+      return false;
     }
     if (n.sz == 0) {
       n.p = b;
       n.sz = sz;
       dump("link", a, b, sz);
-      return;
+      return true;
     }
   }
   dump("fail", a, b, sz);
@@ -77,23 +95,25 @@ void trace(point from, point p, long sz) {
     return;
   }
 
-  vis[p.y][p.x] = true;
-  long paths{};
+  long count{};
   for (auto c : cardinals) {
     if (can_walk(p + step(c)))
-      paths++;
+      count++;
   }
-  if (paths > 2) {
-    link(from, p, sz);
-    link(p, from, sz);
+  if (count > 2) {
+    if (!link(from, p, sz))
+      return;
+    if (!link(p, from, sz))
+      return;
     from = p;
     sz = 0;
   }
 
+  vis[p.y][p.x] = true;
   for (auto c : cardinals) {
     trace(from, p + step(c), sz + 1);
   }
-  // vis[p.y][p.x] = false;
+  vis[p.y][p.x] = false;
 }
 
 long walk(point p, long cost = 0) {
@@ -127,6 +147,9 @@ int main(int argc, char **argv) {
   const point s{2, 1};
   trace(s, s, 0);
 
+  // dump_graph(s);
+
+  info("tgt", map.rows);
   info("res", walk(s));
 
   // dump_map();
